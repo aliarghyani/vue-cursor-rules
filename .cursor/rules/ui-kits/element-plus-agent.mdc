@@ -1,0 +1,10 @@
+---
+title: Element Plus Integration
+tags: [element-plus, ui, tailwind]
+---
+
+# Element Plus
+
+- On-demand imports recommended; theme via design tokens.
+- Use ElForm for validation; respect a11y attributes.
+- Keep Tailwind utilities for wrappers; avoid specificity wars.

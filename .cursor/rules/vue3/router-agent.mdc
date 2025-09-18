@@ -1,0 +1,11 @@
+---
+title: Vue Router 4 Patterns
+tags: [router, navigation]
+globs: ["src/router/**/*.ts","src/**/*.vue"]
+---
+
+# Router
+
+- Lazy-load routes; type route params.
+- Use per-route guards for auth; centralize scrollBehavior.
+- Provide 404 and error boundaries.

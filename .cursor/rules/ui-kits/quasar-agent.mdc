@@ -1,0 +1,10 @@
+---
+title: Quasar Integration
+tags: [quasar, ui, tailwind]
+---
+
+# Quasar
+
+- Use Quasar components in a Vite project (SSR/mobile features not assumed).
+- Prefer Quasar for complex controls; Tailwind for layout.
+- Configure icon set and theme centrally.

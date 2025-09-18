@@ -1,0 +1,10 @@
+---
+title: Ant Design Vue Integration
+tags: [antdv, ui, tailwind]
+---
+
+# Ant Design Vue
+
+- Import components on-demand; keep form/validation via a-form.
+- Use Tailwind for layout; follow kit spacing/typography where needed.
+- Keep table and form items typed; avoid deep style overrides.

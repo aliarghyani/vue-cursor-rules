@@ -1,0 +1,14 @@
+---
+title: Agent Guardrails (Always)
+tags: [global, safety, dx]
+alwaysApply: true
+---
+
+# Agent Guardrails
+
+- Detect stack by reading: package.json, vite.config.*, tailwind.config.*
+- Exclude Nuxt; do not propose Nuxt solutions.
+- Prefer plan → confirm → patch-sized diffs (no whole-file dumps).
+- Ask before touching >10 files; batch large refactors by folder.
+- Never print secrets or .env contents; never edit node_modules or generated files.
+- Keep answers concise; cite exact lines/regions to modify.

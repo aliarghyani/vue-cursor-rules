@@ -1,0 +1,11 @@
+---
+title: vue3-datepicker Patterns
+tags: [datepicker, forms]
+globs: ["src/**/*.vue","src/**/*.ts"]
+---
+
+# vue3-datepicker
+
+- Standardize single vs range pickers; pass locale/timezone.
+- Expose v-model bindings clearly; format input/output consistently.
+- Ensure keyboard and screen-reader accessibility.

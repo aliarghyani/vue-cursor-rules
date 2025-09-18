@@ -1,0 +1,9 @@
+{
+  "name": "vue3-cursor-rules",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint:rules": "node scripts/lint-rules.mjs",
+    "measure:tokens": "node scripts/measure-tokens.mjs"
+  }
+}

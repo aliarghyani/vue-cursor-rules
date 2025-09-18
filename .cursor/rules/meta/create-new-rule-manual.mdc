@@ -1,0 +1,11 @@
+---
+title: How to Create a New Rule
+tags: [meta]
+---
+
+# New Rule Guidelines
+
+- Keep < 80 lines; use imperative bullets.
+- Add precise globs to limit when it loads.
+- Prefer examples as diffs rather than full files.
+- Test against samples/minimal-vue-app before commit.

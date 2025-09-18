@@ -1,0 +1,10 @@
+---
+title: PrimeVue Integration
+tags: [primevue, ui, tailwind]
+---
+
+# PrimeVue
+
+- Import components individually; enable ripple as needed.
+- Use DataTable responsibly (pagination/virtual scroll).
+- Tailwind for structure; PrimeVue for widgets.

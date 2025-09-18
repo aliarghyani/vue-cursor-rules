@@ -1,0 +1,12 @@
+---
+title: Budget Mode (Always)
+tags: [budget, tokens, speed]
+alwaysApply: true
+---
+
+# Budget Mode
+
+- Summarize large files before editing.
+- Cap response length; avoid repeating unchanged code.
+- If many files are involved, propose a multi-PR plan.
+- Prefer minimal diff patches and TODO checklists.

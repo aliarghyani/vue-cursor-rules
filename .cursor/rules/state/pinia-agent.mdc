@@ -1,0 +1,11 @@
+---
+title: Pinia Stores
+tags: [pinia, state]
+globs: ["src/stores/**/*.ts","src/**/*.vue"]
+---
+
+# Pinia
+
+- Use defineStore with typed state/actions/getters.
+- Use storeToRefs for reactivity in components.
+- Separate server cache from UI state; consider persistence carefully.

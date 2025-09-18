@@ -1,0 +1,72 @@
+---
+title: Optimized Service Patterns
+tags: [api, performance, caching]
+globs: ["src/services/**/*.ts", "src/**/*.vue"]
+---
+
+# Optimized Service Patterns
+
+## Request Optimization
+```typescript
+// ✅ Implement request deduplication
+const activeRequests = new Map<string, Promise<any>>()
+
+function dedupedRequest<T>(key: string, requestFn: () => Promise<T>): Promise<T> {
+  if (activeRequests.has(key)) {
+    return activeRequests.get(key)!
+  }
+  
+  const promise = requestFn().finally(() => {
+    activeRequests.delete(key)
+  })
+  
+  activeRequests.set(key, promise)
+  return promise
+}
+```
+
+## Smart Caching
+```typescript
+// ✅ Cache with TTL for expensive operations
+const cache = new Map<string, { data: any; expires: number }>()
+
+function getCached<T>(key: string, ttl: number = 300000): T | null {
+  const cached = cache.get(key)
+  if (cached && Date.now() < cached.expires) {
+    return cached.data
+  }
+  cache.delete(key)
+  return null
+}
+```
+
+## Efficient Error Handling
+```typescript
+// ✅ Centralized error handling with parseErrorMessage
+const handleServiceError = (error: any, operation: string) => {
+  const message = parseErrorMessage(error)
+  $toast.error(message)
+  console.error(`${operation} failed:`, error)
+}
+
+// ✅ Use in services
+UserService.getUsers()
+  .catch(error => handleServiceError(error, 'Fetching users'))
+```
+
+## Pagination Optimization
+```typescript
+// ✅ Virtual scrolling for large datasets
+const pagination = reactive({
+  page: 1,
+  pageSize: 50, // Optimal for performance
+  total: 0
+})
+
+// ✅ Load more pattern instead of traditional pagination
+const loadMore = () => {
+  if (!isLoading.value && hasMore.value) {
+    fetchData(pagination.page + 1)
+  }
+}
+```

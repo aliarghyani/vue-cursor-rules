@@ -1,0 +1,910 @@
+---
+title: Accessibility (A11y) Excellence
+tags: [accessibility, a11y, wcag, inclusive-design, enterprise]
+globs: ["src/**/*.vue", "src/**/*.ts", "src/components/**/*.vue"]
+---
+
+# Accessibility (A11y) Excellence
+
+## 🎯 WCAG 2.1 AA Compliance Standards
+
+### 1. Semantic HTML Foundation
+```vue
+<!-- ✅ EXCELLENT: Proper semantic structure -->
+<template>
+  <article class="user-profile">
+    <header>
+      <h1>{{ user.name }}</h1>
+      <p class="user-role">{{ user.role }}</p>
+    </header>
+    
+    <section aria-labelledby="contact-heading">
+      <h2 id="contact-heading">Contact Information</h2>
+      <address>
+        <p>
+          <span class="sr-only">Email:</span>
+          <a :href="`mailto:${user.email}`">{{ user.email }}</a>
+        </p>
+        <p>
+          <span class="sr-only">Phone:</span>
+          <a :href="`tel:${user.phone}`">{{ user.phone }}</a>
+        </p>
+      </address>
+    </section>
+    
+    <section aria-labelledby="actions-heading">
+      <h2 id="actions-heading" class="sr-only">User Actions</h2>
+      <nav aria-label="User actions">
+        <ul>
+          <li>
+            <button 
+              type="button"
+              @click="editUser"
+              :aria-describedby="canEdit ? undefined : 'edit-disabled-reason'"
+              :disabled="!canEdit"
+            >
+              Edit Profile
+            </button>
+            <p v-if="!canEdit" id="edit-disabled-reason" class="sr-only">
+              You don't have permission to edit this profile
+            </p>
+          </li>
+        </ul>
+      </nav>
+    </section>
+  </article>
+</template>
+
+<!-- ❌ BAD: Non-semantic structure -->
+<template>
+  <div class="user-profile">
+    <div class="header">
+      <div class="name">{{ user.name }}</div>
+      <div class="role">{{ user.role }}</div>
+    </div>
+    <div class="contact">
+      <div>Email: {{ user.email }}</div>
+      <div>Phone: {{ user.phone }}</div>
+    </div>
+  </div>
+</template>
+```
+
+### 2. Advanced ARIA Patterns
+```typescript
+// composables/useAccessibility.ts - A11y utilities
+export function useAccessibility() {
+  // Generate unique IDs for ARIA relationships
+  const generateId = (prefix: string = 'a11y'): string => {
+    return `${prefix}-${Math.random().toString(36).substr(2, 9)}`
+  }
+  
+  // Announce messages to screen readers
+  const announce = (message: string, priority: 'polite' | 'assertive' = 'polite') => {
+    const announcer = document.createElement('div')
+    announcer.setAttribute('aria-live', priority)
+    announcer.setAttribute('aria-atomic', 'true')
+    announcer.className = 'sr-only'
+    announcer.textContent = message
+    
+    document.body.appendChild(announcer)
+    
+    // Clean up after announcement
+    setTimeout(() => {
+      document.body.removeChild(announcer)
+    }, 1000)
+  }
+  
+  // Focus management
+  const trapFocus = (element: HTMLElement): (() => void) => {
+    const focusableElements = element.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    ) as NodeListOf<HTMLElement>
+    
+    const firstElement = focusableElements[0]
+    const lastElement = focusableElements[focusableElements.length - 1]
+    
+    const handleTabKey = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') {
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            lastElement.focus()
+            e.preventDefault()
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            firstElement.focus()
+            e.preventDefault()
+          }
+        }
+      }
+    }
+    
+    element.addEventListener('keydown', handleTabKey)
+    firstElement?.focus()
+    
+    return () => {
+      element.removeEventListener('keydown', handleTabKey)
+    }
+  }
+  
+  // Skip links for keyboard navigation
+  const createSkipLink = (targetId: string, text: string): HTMLElement => {
+    const skipLink = document.createElement('a')
+    skipLink.href = `#${targetId}`
+    skipLink.textContent = text
+    skipLink.className = 'skip-link'
+    
+    skipLink.addEventListener('click', (e) => {
+      e.preventDefault()
+      const target = document.getElementById(targetId)
+      if (target) {
+        target.focus()
+        target.scrollIntoView({ behavior: 'smooth' })
+      }
+    })
+    
+    return skipLink
+  }
+  
+  return {
+    generateId,
+    announce,
+    trapFocus,
+    createSkipLink
+  }
+}
+
+// Screen reader detection
+export function useScreenReader() {
+  const isScreenReader = ref(false)
+  
+  onMounted(() => {
+    // Detect screen reader usage
+    const checkScreenReader = () => {
+      // Check for common screen reader indicators
+      const hasReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      const hasHighContrast = window.matchMedia('(prefers-contrast: high)').matches
+      const hasScreenReaderCSS = getComputedStyle(document.documentElement).getPropertyValue('--screen-reader-only')
+      
+      isScreenReader.value = hasReducedMotion || hasHighContrast || !!hasScreenReaderCSS
+    }
+    
+    checkScreenReader()
+    
+    // Listen for preference changes
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const contrastQuery = window.matchMedia('(prefers-contrast: high)')
+    
+    motionQuery.addEventListener('change', checkScreenReader)
+    contrastQuery.addEventListener('change', checkScreenReader)
+    
+    onBeforeUnmount(() => {
+      motionQuery.removeEventListener('change', checkScreenReader)
+      contrastQuery.removeEventListener('change', checkScreenReader)
+    })
+  })
+  
+  return { isScreenReader: readonly(isScreenReader) }
+}
+```
+
+### 3. Accessible Form Components
+```vue
+<!-- components/AccessibleForm.vue -->
+<template>
+  <form @submit.prevent="handleSubmit" novalidate>
+    <fieldset>
+      <legend>{{ formTitle }}</legend>
+      
+      <!-- Text Input with comprehensive a11y -->
+      <div class="form-field">
+        <label :for="emailId" class="required">
+          Email Address
+          <span aria-label="required field">*</span>
+        </label>
+        <input
+          :id="emailId"
+          v-model="email"
+          type="email"
+          :aria-describedby="emailError ? emailErrorId : emailHelpId"
+          :aria-invalid="!!emailError"
+          :aria-required="true"
+          autocomplete="email"
+          @blur="validateEmail"
+        />
+        <div :id="emailHelpId" class="help-text">
+          We'll never share your email with anyone else.
+        </div>
+        <div 
+          v-if="emailError" 
+          :id="emailErrorId" 
+          class="error-text" 
+          role="alert"
+          aria-live="polite"
+        >
+          {{ emailError }}
+        </div>
+      </div>
+      
+      <!-- Select with proper ARIA -->
+      <div class="form-field">
+        <label :for="countryId">Country</label>
+        <select
+          :id="countryId"
+          v-model="selectedCountry"
+          :aria-describedby="countryHelpId"
+          @change="announceSelection"
+        >
+          <option value="">Select a country</option>
+          <option 
+            v-for="country in countries" 
+            :key="country.code"
+            :value="country.code"
+          >
+            {{ country.name }}
+          </option>
+        </select>
+        <div :id="countryHelpId" class="help-text">
+          Choose your primary country of residence.
+        </div>
+      </div>
+      
+      <!-- Checkbox group with fieldset -->
+      <fieldset>
+        <legend>Notification Preferences</legend>
+        <div class="checkbox-group" role="group" :aria-describedby="notificationHelpId">
+          <div 
+            v-for="option in notificationOptions" 
+            :key="option.id"
+            class="checkbox-item"
+          >
+            <input
+              :id="option.id"
+              v-model="selectedNotifications"
+              :value="option.value"
+              type="checkbox"
+              :aria-describedby="`${option.id}-description`"
+            />
+            <label :for="option.id">
+              {{ option.label }}
+            </label>
+            <div :id="`${option.id}-description`" class="option-description">
+              {{ option.description }}
+            </div>
+          </div>
+        </div>
+        <div :id="notificationHelpId" class="help-text">
+          Select how you'd like to receive notifications.
+        </div>
+      </fieldset>
+      
+      <!-- Submit with loading state -->
+      <div class="form-actions">
+        <button 
+          type="submit" 
+          :disabled="isSubmitting || !isFormValid"
+          :aria-describedby="isSubmitting ? 'submit-status' : undefined"
+        >
+          <span v-if="!isSubmitting">Submit Form</span>
+          <span v-else>
+            <span class="spinner" aria-hidden="true"></span>
+            Submitting...
+          </span>
+        </button>
+        
+        <div 
+          v-if="isSubmitting" 
+          id="submit-status" 
+          aria-live="polite"
+          class="sr-only"
+        >
+          Form is being submitted. Please wait.
+        </div>
+      </div>
+    </fieldset>
+  </form>
+</template>
+
+<script setup lang="ts">
+const { generateId, announce } = useAccessibility()
+
+// Generate unique IDs for ARIA relationships
+const emailId = generateId('email')
+const emailErrorId = generateId('email-error')
+const emailHelpId = generateId('email-help')
+const countryId = generateId('country')
+const countryHelpId = generateId('country-help')
+const notificationHelpId = generateId('notification-help')
+
+const email = ref('')
+const emailError = ref('')
+const selectedCountry = ref('')
+const selectedNotifications = ref<string[]>([])
+const isSubmitting = ref(false)
+
+const isFormValid = computed(() => {
+  return email.value && !emailError.value && selectedCountry.value
+})
+
+const validateEmail = () => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!email.value) {
+    emailError.value = 'Email is required'
+  } else if (!emailRegex.test(email.value)) {
+    emailError.value = 'Please enter a valid email address'
+  } else {
+    emailError.value = ''
+  }
+}
+
+const announceSelection = () => {
+  const country = countries.value.find(c => c.code === selectedCountry.value)
+  if (country) {
+    announce(`Selected ${country.name}`)
+  }
+}
+
+const handleSubmit = async () => {
+  validateEmail()
+  
+  if (!isFormValid.value) {
+    announce('Please correct the errors in the form', 'assertive')
+    return
+  }
+  
+  isSubmitting.value = true
+  announce('Submitting form...', 'polite')
+  
+  try {
+    await submitForm({
+      email: email.value,
+      country: selectedCountry.value,
+      notifications: selectedNotifications.value
+    })
+    
+    announce('Form submitted successfully!', 'assertive')
+  } catch (error) {
+    announce('Error submitting form. Please try again.', 'assertive')
+  } finally {
+    isSubmitting.value = false
+  }
+}
+</script>
+```
+
+### 4. Accessible Data Tables
+```vue
+<!-- components/AccessibleDataTable.vue -->
+<template>
+  <div class="table-container">
+    <!-- Table description -->
+    <div :id="tableCaptionId" class="table-caption">
+      {{ tableCaption }}
+      <span class="table-summary">
+        Showing {{ visibleRows }} of {{ totalRows }} users.
+        {{ sortDescription }}
+      </span>
+    </div>
+    
+    <!-- Search and filters -->
+    <div class="table-controls">
+      <div class="search-container">
+        <label :for="searchId" class="sr-only">Search users</label>
+        <input
+          :id="searchId"
+          v-model="searchQuery"
+          type="search"
+          placeholder="Search users..."
+          :aria-describedby="searchHelpId"
+          @input="announceSearchResults"
+        />
+        <div :id="searchHelpId" class="sr-only">
+          Search will filter the table results as you type
+        </div>
+      </div>
+      
+      <div class="filter-container">
+        <label :for="roleFilterId">Filter by role:</label>
+        <select :id="roleFilterId" v-model="roleFilter" @change="announceFilterChange">
+          <option value="">All roles</option>
+          <option v-for="role in availableRoles" :key="role" :value="role">
+            {{ role }}
+          </option>
+        </select>
+      </div>
+    </div>
+    
+    <!-- Data table -->
+    <table 
+      role="table" 
+      :aria-labelledby="tableCaptionId"
+      :aria-rowcount="totalRows"
+      :aria-colcount="columns.length"
+    >
+      <thead>
+        <tr role="row">
+          <th
+            v-for="(column, index) in columns"
+            :key="column.key"
+            role="columnheader"
+            :aria-sort="getSortDirection(column.key)"
+            :aria-colindex="index + 1"
+            :tabindex="column.sortable ? 0 : -1"
+            @click="column.sortable ? handleSort(column.key) : undefined"
+            @keydown="column.sortable ? handleSortKeydown($event, column.key) : undefined"
+            :class="{ 
+              'sortable': column.sortable,
+              'sorted': sortColumn === column.key
+            }"
+          >
+            {{ column.label }}
+            <span v-if="column.sortable" class="sort-indicator" aria-hidden="true">
+              <span v-if="sortColumn === column.key">
+                {{ sortDirection === 'asc' ? '↑' : '↓' }}
+              </span>
+              <span v-else>↕</span>
+            </span>
+            <span v-if="column.sortable" class="sr-only">
+              {{ getSortInstructions(column.key) }}
+            </span>
+          </th>
+        </tr>
+      </thead>
+      
+      <tbody>
+        <tr 
+          v-for="(user, rowIndex) in paginatedUsers" 
+          :key="user.id"
+          role="row"
+          :aria-rowindex="rowIndex + 2"
+        >
+          <td
+            v-for="(column, colIndex) in columns"
+            :key="column.key"
+            role="gridcell"
+            :aria-colindex="colIndex + 1"
+            :data-label="column.label"
+          >
+            <!-- Name column with link -->
+            <template v-if="column.key === 'name'">
+              <a 
+                :href="`/users/${user.id}`"
+                :aria-describedby="`user-${user.id}-details`"
+              >
+                {{ user.name }}
+              </a>
+              <div :id="`user-${user.id}-details`" class="sr-only">
+                View details for {{ user.name }}, {{ user.role }} in {{ user.department }}
+              </div>
+            </template>
+            
+            <!-- Status column with visual and text indicators -->
+            <template v-else-if="column.key === 'status'">
+              <span 
+                :class="`status status-${user.status.toLowerCase()}`"
+                :aria-label="`Status: ${user.status}`"
+              >
+                <span class="status-indicator" aria-hidden="true"></span>
+                {{ user.status }}
+              </span>
+            </template>
+            
+            <!-- Actions column -->
+            <template v-else-if="column.key === 'actions'">
+              <div class="action-buttons">
+                <button
+                  type="button"
+                  @click="editUser(user)"
+                  :aria-label="`Edit ${user.name}`"
+                  class="btn-icon"
+                >
+                  <Icon name="edit" aria-hidden="true" />
+                  <span class="sr-only">Edit</span>
+                </button>
+                
+                <button
+                  type="button"
+                  @click="deleteUser(user)"
+                  :aria-label="`Delete ${user.name}`"
+                  class="btn-icon btn-danger"
+                >
+                  <Icon name="delete" aria-hidden="true" />
+                  <span class="sr-only">Delete</span>
+                </button>
+              </div>
+            </template>
+            
+            <!-- Default column rendering -->
+            <template v-else>
+              {{ user[column.key] }}
+            </template>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <!-- Pagination -->
+    <nav aria-label="Table pagination" class="pagination">
+      <button
+        type="button"
+        @click="goToPage(currentPage - 1)"
+        :disabled="currentPage === 1"
+        :aria-label="`Go to page ${currentPage - 1}`"
+      >
+        Previous
+      </button>
+      
+      <ol class="page-list">
+        <li v-for="page in visiblePages" :key="page">
+          <button
+            v-if="page !== '...'"
+            type="button"
+            @click="goToPage(page)"
+            :aria-label="`Go to page ${page}`"
+            :aria-current="page === currentPage ? 'page' : undefined"
+            :class="{ 'current': page === currentPage }"
+          >
+            {{ page }}
+          </button>
+          <span v-else aria-hidden="true">...</span>
+        </li>
+      </ol>
+      
+      <button
+        type="button"
+        @click="goToPage(currentPage + 1)"
+        :disabled="currentPage === totalPages"
+        :aria-label="`Go to page ${currentPage + 1}`"
+      >
+        Next
+      </button>
+    </nav>
+    
+    <!-- Status announcements -->
+    <div 
+      class="sr-only" 
+      aria-live="polite" 
+      aria-atomic="true"
+      :id="statusAnnouncementId"
+    >
+      {{ statusAnnouncement }}
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+const { generateId, announce } = useAccessibility()
+
+// Generate unique IDs
+const tableCaptionId = generateId('table-caption')
+const searchId = generateId('search')
+const searchHelpId = generateId('search-help')
+const roleFilterId = generateId('role-filter')
+const statusAnnouncementId = generateId('status')
+
+// Component state
+const searchQuery = ref('')
+const roleFilter = ref('')
+const sortColumn = ref('')
+const sortDirection = ref<'asc' | 'desc'>('asc')
+const currentPage = ref(1)
+const statusAnnouncement = ref('')
+
+// Computed properties
+const sortDescription = computed(() => {
+  if (!sortColumn.value) return 'Not sorted'
+  return `Sorted by ${sortColumn.value} ${sortDirection.value === 'asc' ? 'ascending' : 'descending'}`
+})
+
+// Accessibility methods
+const getSortDirection = (columnKey: string): string => {
+  if (sortColumn.value !== columnKey) return 'none'
+  return sortDirection.value === 'asc' ? 'ascending' : 'descending'
+}
+
+const getSortInstructions = (columnKey: string): string => {
+  if (sortColumn.value !== columnKey) {
+    return 'Press Enter or Space to sort by this column'
+  }
+  const nextDirection = sortDirection.value === 'asc' ? 'descending' : 'ascending'
+  return `Currently sorted ${sortDirection.value === 'asc' ? 'ascending' : 'descending'}. Press Enter or Space to sort ${nextDirection}`
+}
+
+const handleSort = (columnKey: string) => {
+  if (sortColumn.value === columnKey) {
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortColumn.value = columnKey
+    sortDirection.value = 'asc'
+  }
+  
+  announce(`Table sorted by ${columnKey} ${sortDirection.value === 'asc' ? 'ascending' : 'descending'}`)
+}
+
+const handleSortKeydown = (event: KeyboardEvent, columnKey: string) => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    handleSort(columnKey)
+  }
+}
+
+const announceSearchResults = () => {
+  const resultCount = filteredUsers.value.length
+  statusAnnouncement.value = `${resultCount} users found`
+}
+
+const announceFilterChange = () => {
+  const resultCount = filteredUsers.value.length
+  const filterText = roleFilter.value ? `filtered by ${roleFilter.value}` : 'filter removed'
+  statusAnnouncement.value = `${resultCount} users shown, ${filterText}`
+}
+</script>
+
+<style scoped>
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus indicators */
+button:focus,
+a:focus,
+input:focus,
+select:focus,
+th:focus {
+  outline: 2px solid #005fcc;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  th, td {
+    border: 1px solid;
+  }
+  
+  .status-indicator {
+    border: 2px solid;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+```
+
+### 5. Accessible Navigation
+```vue
+<!-- components/AccessibleNavigation.vue -->
+<template>
+  <nav role="navigation" :aria-label="navLabel">
+    <!-- Skip link -->
+    <a href="#main-content" class="skip-link">
+      Skip to main content
+    </a>
+    
+    <!-- Mobile menu button -->
+    <button
+      v-if="isMobile"
+      type="button"
+      class="menu-toggle"
+      :aria-expanded="isMenuOpen"
+      :aria-controls="menuId"
+      @click="toggleMenu"
+    >
+      <span class="sr-only">
+        {{ isMenuOpen ? 'Close' : 'Open' }} navigation menu
+      </span>
+      <Icon :name="isMenuOpen ? 'close' : 'menu'" aria-hidden="true" />
+    </button>
+    
+    <!-- Navigation menu -->
+    <ul
+      :id="menuId"
+      class="nav-menu"
+      :class="{ 'menu-open': isMenuOpen }"
+      role="menubar"
+      :aria-hidden="isMobile && !isMenuOpen"
+    >
+      <li
+        v-for="(item, index) in menuItems"
+        :key="item.id"
+        role="none"
+      >
+        <!-- Simple navigation item -->
+        <template v-if="!item.children">
+          <a
+            :href="item.href"
+            role="menuitem"
+            :aria-current="isCurrentPage(item.href) ? 'page' : undefined"
+            :tabindex="isMobile && !isMenuOpen ? -1 : 0"
+            @click="handleNavigation(item)"
+          >
+            <Icon v-if="item.icon" :name="item.icon" aria-hidden="true" />
+            {{ item.label }}
+          </a>
+        </template>
+        
+        <!-- Dropdown navigation item -->
+        <template v-else>
+          <button
+            type="button"
+            role="menuitem"
+            :aria-expanded="item.isOpen"
+            :aria-controls="`submenu-${item.id}`"
+            :aria-haspopup="true"
+            :tabindex="isMobile && !isMenuOpen ? -1 : 0"
+            @click="toggleSubmenu(item)"
+            @keydown="handleSubmenuKeydown($event, item)"
+          >
+            <Icon v-if="item.icon" :name="item.icon" aria-hidden="true" />
+            {{ item.label }}
+            <Icon 
+              name="chevron-down" 
+              :class="{ 'rotated': item.isOpen }"
+              aria-hidden="true"
+            />
+          </button>
+          
+          <ul
+            :id="`submenu-${item.id}`"
+            role="menu"
+            :aria-labelledby="`submenu-${item.id}-button`"
+            :aria-hidden="!item.isOpen"
+            class="submenu"
+            :class="{ 'submenu-open': item.isOpen }"
+          >
+            <li
+              v-for="subItem in item.children"
+              :key="subItem.id"
+              role="none"
+            >
+              <a
+                :href="subItem.href"
+                role="menuitem"
+                :aria-current="isCurrentPage(subItem.href) ? 'page' : undefined"
+                :tabindex="!item.isOpen ? -1 : 0"
+                @click="handleNavigation(subItem)"
+              >
+                {{ subItem.label }}
+              </a>
+            </li>
+          </ul>
+        </template>
+      </li>
+    </ul>
+  </nav>
+</template>
+
+<script setup lang="ts">
+const { generateId, announce } = useAccessibility()
+
+interface MenuItem {
+  id: string
+  label: string
+  href?: string
+  icon?: string
+  children?: MenuItem[]
+  isOpen?: boolean
+}
+
+interface Props {
+  menuItems: MenuItem[]
+  navLabel?: string
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  navLabel: 'Main navigation'
+})
+
+const menuId = generateId('nav-menu')
+const isMenuOpen = ref(false)
+const isMobile = ref(false)
+
+// Check if current page
+const isCurrentPage = (href: string): boolean => {
+  return window.location.pathname === href
+}
+
+// Mobile detection
+onMounted(() => {
+  const checkMobile = () => {
+    isMobile.value = window.innerWidth < 768
+  }
+  
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+  
+  onBeforeUnmount(() => {
+    window.removeEventListener('resize', checkMobile)
+  })
+})
+
+const toggleMenu = () => {
+  isMenuOpen.value = !isMenuOpen.value
+  announce(
+    isMenuOpen.value ? 'Navigation menu opened' : 'Navigation menu closed',
+    'polite'
+  )
+}
+
+const toggleSubmenu = (item: MenuItem) => {
+  item.isOpen = !item.isOpen
+  announce(
+    `${item.label} submenu ${item.isOpen ? 'opened' : 'closed'}`,
+    'polite'
+  )
+}
+
+const handleSubmenuKeydown = (event: KeyboardEvent, item: MenuItem) => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    toggleSubmenu(item)
+  } else if (event.key === 'Escape' && item.isOpen) {
+    item.isOpen = false
+    announce(`${item.label} submenu closed`, 'polite')
+  }
+}
+
+const handleNavigation = (item: MenuItem) => {
+  if (isMobile.value) {
+    isMenuOpen.value = false
+  }
+  
+  announce(`Navigating to ${item.label}`, 'polite')
+}
+</script>
+
+<style scoped>
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: #000;
+  color: #fff;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 1000;
+  transition: top 0.3s;
+}
+
+.skip-link:focus {
+  top: 6px;
+}
+
+/* Ensure keyboard navigation is visible */
+[role="menuitem"]:focus {
+  outline: 2px solid #005fcc;
+  outline-offset: 2px;
+}
+
+/* High contrast support */
+@media (prefers-contrast: high) {
+  .nav-menu {
+    border: 1px solid;
+  }
+  
+  [aria-current="page"] {
+    background: HighlightText;
+    color: Highlight;
+  }
+}
+</style>
+```
+
+This accessibility system ensures your Vue 3 application meets WCAG 2.1 AA standards and provides an excellent experience for all users, including those using assistive technologies.

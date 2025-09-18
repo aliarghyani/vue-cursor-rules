@@ -1,11 +1,634 @@
 ---
-title: Pinia Stores
-tags: [pinia, state]
-globs: ["src/stores/**/*.ts","src/**/*.vue"]
+title: Advanced State Management with Pinia
+tags: [pinia, state, enterprise, patterns, vuex-migration]
+globs: ["src/stores/**/*.ts", "src/**/*.vue"]
 ---
 
-# Pinia
+# Advanced State Management with Pinia
 
-- Use defineStore with typed state/actions/getters.
-- Use storeToRefs for reactivity in components.
-- Separate server cache from UI state; consider persistence carefully.
+## 🏗️ Enterprise Store Architecture
+
+### 1. Modular Store Design Pattern
+```typescript
+// stores/types.ts - Centralized state types
+export interface User {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  permissions: Permission[]
+}
+
+export interface ApiState<T> {
+  data: T | null
+  loading: boolean
+  error: string | null
+  lastFetch: Date | null
+}
+
+export interface PaginationState {
+  page: number
+  limit: number
+  total: number
+  hasMore: boolean
+}
+
+// Base store interface for consistency
+export interface BaseStore {
+  $reset(): void
+  $patch(partial: any): void
+  $subscribe(callback: Function): Function
+}
+```
+
+### 2. Store Composition Pattern
+```typescript
+// stores/modules/apiStore.ts - Reusable API store logic
+export function createApiStore<T>(
+  storeName: string,
+  apiService: {
+    getAll: (params?: any) => Promise<T[]>
+    getById: (id: string) => Promise<T>
+    create: (data: Partial<T>) => Promise<T>
+    update: (id: string, data: Partial<T>) => Promise<T>
+    delete: (id: string) => Promise<void>
+  }
+) {
+  return defineStore(storeName, () => {
+    // State
+    const items = ref<T[]>([])
+    const currentItem = ref<T | null>(null)
+    const loading = ref(false)
+    const error = ref<string | null>(null)
+    const lastFetch = ref<Date | null>(null)
+    const pagination = ref<PaginationState>({
+      page: 1,
+      limit: 20,
+      total: 0,
+      hasMore: false
+    })
+    
+    // Getters
+    const itemsById = computed(() => {
+      return items.value.reduce((acc, item: any) => {
+        acc[item.id] = item
+        return acc
+      }, {} as Record<string, T>)
+    })
+    
+    const isLoading = computed(() => loading.value)
+    const hasError = computed(() => !!error.value)
+    const isEmpty = computed(() => items.value.length === 0)
+    
+    // Actions
+    const setLoading = (state: boolean) => {
+      loading.value = state
+      if (state) error.value = null
+    }
+    
+    const setError = (message: string) => {
+      error.value = message
+      loading.value = false
+    }
+    
+    const fetchAll = async (params?: any) => {
+      setLoading(true)
+      try {
+        const data = await apiService.getAll(params)
+        items.value = data
+        lastFetch.value = new Date()
+        
+        // Handle pagination if included in response
+        if ('pagination' in data) {
+          pagination.value = (data as any).pagination
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch items')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    const fetchById = async (id: string) => {
+      setLoading(true)
+      try {
+        const item = await apiService.getById(id)
+        currentItem.value = item
+        
+        // Update item in list if it exists
+        const index = items.value.findIndex((i: any) => i.id === id)
+        if (index >= 0) {
+          items.value[index] = item
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch item')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    const create = async (data: Partial<T>) => {
+      setLoading(true)
+      try {
+        const newItem = await apiService.create(data)
+        items.value.unshift(newItem)
+        currentItem.value = newItem
+        return newItem
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to create item')
+        throw err
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    const update = async (id: string, data: Partial<T>) => {
+      setLoading(true)
+      try {
+        const updatedItem = await apiService.update(id, data)
+        
+        // Update in list
+        const index = items.value.findIndex((i: any) => i.id === id)
+        if (index >= 0) {
+          items.value[index] = updatedItem
+        }
+        
+        // Update current item if it's the same
+        if (currentItem.value && (currentItem.value as any).id === id) {
+          currentItem.value = updatedItem
+        }
+        
+        return updatedItem
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to update item')
+        throw err
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    const remove = async (id: string) => {
+      setLoading(true)
+      try {
+        await apiService.delete(id)
+        
+        // Remove from list
+        items.value = items.value.filter((i: any) => i.id !== id)
+        
+        // Clear current item if it's the same
+        if (currentItem.value && (currentItem.value as any).id === id) {
+          currentItem.value = null
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to delete item')
+        throw err
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    const clearError = () => {
+      error.value = null
+    }
+    
+    const reset = () => {
+      items.value = []
+      currentItem.value = null
+      loading.value = false
+      error.value = null
+      lastFetch.value = null
+      pagination.value = {
+        page: 1,
+        limit: 20,
+        total: 0,
+        hasMore: false
+      }
+    }
+    
+    // Cache management
+    const isStale = (maxAge: number = 300000) => { // 5 minutes default
+      if (!lastFetch.value) return true
+      return Date.now() - lastFetch.value.getTime() > maxAge
+    }
+    
+    const fetchIfStale = async (params?: any, maxAge?: number) => {
+      if (isStale(maxAge) || isEmpty.value) {
+        await fetchAll(params)
+      }
+    }
+    
+    return {
+      // State
+      items: readonly(items),
+      currentItem: readonly(currentItem),
+      loading: readonly(loading),
+      error: readonly(error),
+      lastFetch: readonly(lastFetch),
+      pagination: readonly(pagination),
+      
+      // Getters
+      itemsById,
+      isLoading,
+      hasError,
+      isEmpty,
+      
+      // Actions
+      fetchAll,
+      fetchById,
+      create,
+      update,
+      remove,
+      clearError,
+      reset,
+      isStale,
+      fetchIfStale
+    }
+  })
+}
+```
+
+### 3. Concrete Store Implementation
+```typescript
+// stores/users.ts - User store using the API store pattern
+import { userService } from '@/services/userService'
+import { createApiStore } from './modules/apiStore'
+
+export const useUserStore = createApiStore('users', userService)
+
+// Add user-specific functionality
+export const useEnhancedUserStore = defineStore('enhancedUsers', () => {
+  const baseStore = useUserStore()
+  
+  // User-specific state
+  const currentUser = ref<User | null>(null)
+  const userPreferences = ref<UserPreferences | null>(null)
+  
+  // User-specific getters
+  const adminUsers = computed(() => 
+    baseStore.items.filter(user => user.role === UserRole.ADMIN)
+  )
+  
+  const activeUsers = computed(() =>
+    baseStore.items.filter(user => user.status === 'active')
+  )
+  
+  const usersByDepartment = computed(() => {
+    return baseStore.items.reduce((acc, user) => {
+      const dept = user.department || 'unassigned'
+      if (!acc[dept]) acc[dept] = []
+      acc[dept].push(user)
+      return acc
+    }, {} as Record<string, User[]>)
+  })
+  
+  // User-specific actions
+  const login = async (credentials: LoginCredentials) => {
+    try {
+      const user = await userService.login(credentials)
+      currentUser.value = user
+      await loadUserPreferences(user.id)
+      return user
+    } catch (error) {
+      throw error
+    }
+  }
+  
+  const logout = async () => {
+    await userService.logout()
+    currentUser.value = null
+    userPreferences.value = null
+    baseStore.reset()
+  }
+  
+  const loadUserPreferences = async (userId: string) => {
+    try {
+      userPreferences.value = await userService.getPreferences(userId)
+    } catch (error) {
+      console.warn('Failed to load user preferences:', error)
+    }
+  }
+  
+  const updateUserPreferences = async (preferences: Partial<UserPreferences>) => {
+    if (!currentUser.value) return
+    
+    try {
+      const updated = await userService.updatePreferences(
+        currentUser.value.id,
+        preferences
+      )
+      userPreferences.value = updated
+    } catch (error) {
+      throw error
+    }
+  }
+  
+  // Bulk operations
+  const bulkUpdateUsers = async (userIds: string[], updates: Partial<User>) => {
+    const promises = userIds.map(id => baseStore.update(id, updates))
+    return Promise.allSettled(promises)
+  }
+  
+  const exportUsers = async (filters?: UserFilters) => {
+    return userService.exportUsers(filters)
+  }
+  
+  return {
+    // Inherit base store
+    ...baseStore,
+    
+    // Enhanced state
+    currentUser: readonly(currentUser),
+    userPreferences: readonly(userPreferences),
+    
+    // Enhanced getters
+    adminUsers,
+    activeUsers,
+    usersByDepartment,
+    
+    // Enhanced actions
+    login,
+    logout,
+    loadUserPreferences,
+    updateUserPreferences,
+    bulkUpdateUsers,
+    exportUsers
+  }
+})
+```
+
+### 4. Store Plugins & Middleware
+```typescript
+// plugins/storePlugins.ts - Pinia plugins for enhanced functionality
+import { PiniaPluginContext } from 'pinia'
+
+// Persistence plugin
+export function createPersistencePlugin(
+  options: {
+    key?: string
+    storage?: Storage
+    serializer?: {
+      serialize: (value: any) => string
+      deserialize: (value: string) => any
+    }
+  } = {}
+) {
+  const {
+    storage = localStorage,
+    serializer = {
+      serialize: JSON.stringify,
+      deserialize: JSON.parse
+    }
+  } = options
+  
+  return ({ store, options: storeOptions }: PiniaPluginContext) => {
+    if (storeOptions.persist) {
+      const key = options.key || `pinia-${store.$id}`
+      
+      // Restore state from storage
+      try {
+        const stored = storage.getItem(key)
+        if (stored) {
+          const data = serializer.deserialize(stored)
+          store.$patch(data)
+        }
+      } catch (error) {
+        console.warn(`Failed to restore store ${store.$id}:`, error)
+      }
+      
+      // Subscribe to changes
+      store.$subscribe((mutation, state) => {
+        try {
+          storage.setItem(key, serializer.serialize(state))
+        } catch (error) {
+          console.warn(`Failed to persist store ${store.$id}:`, error)
+        }
+      })
+    }
+  }
+}
+
+// Development debugging plugin
+export function createDebugPlugin() {
+  return ({ store }: PiniaPluginContext) => {
+    if (import.meta.env.DEV) {
+      store.$subscribe((mutation, state) => {
+        console.group(`🏪 Store ${store.$id} - ${mutation.type}`)
+        console.log('Mutation:', mutation)
+        console.log('State:', state)
+        console.groupEnd()
+      })
+    }
+  }
+}
+
+// Performance monitoring plugin
+export function createPerformancePlugin() {
+  return ({ store }: PiniaPluginContext) => {
+    const originalActions = { ...store }
+    
+    // Wrap actions with performance monitoring
+    Object.keys(store).forEach(key => {
+      const action = store[key]
+      if (typeof action === 'function' && !key.startsWith('$')) {
+        store[key] = async (...args: any[]) => {
+          const start = performance.now()
+          try {
+            const result = await action.apply(store, args)
+            const duration = performance.now() - start
+            
+            if (duration > 100) { // Log slow actions
+              console.warn(
+                `⚠️ Slow store action: ${store.$id}.${key} took ${duration.toFixed(2)}ms`
+              )
+            }
+            
+            return result
+          } catch (error) {
+            const duration = performance.now() - start
+            console.error(
+              `❌ Store action failed: ${store.$id}.${key} after ${duration.toFixed(2)}ms`,
+              error
+            )
+            throw error
+          }
+        }
+      }
+    })
+  }
+}
+
+// Setup plugins
+export function setupStorePlugins(pinia: Pinia) {
+  pinia.use(createPersistencePlugin())
+  pinia.use(createDebugPlugin())
+  pinia.use(createPerformancePlugin())
+}
+```
+
+### 5. Advanced State Patterns
+```typescript
+// stores/patterns/optimisticUpdates.ts
+export function useOptimisticUpdates<T extends { id: string }>() {
+  const pendingUpdates = ref(new Map<string, T>())
+  const failedUpdates = ref(new Map<string, { item: T; error: Error }>())
+  
+  const applyOptimisticUpdate = (
+    items: Ref<T[]>,
+    id: string,
+    updates: Partial<T>,
+    updateFn: (id: string, updates: Partial<T>) => Promise<T>
+  ) => {
+    // Store original item
+    const originalIndex = items.value.findIndex(item => item.id === id)
+    if (originalIndex === -1) return
+    
+    const originalItem = { ...items.value[originalIndex] }
+    const optimisticItem = { ...originalItem, ...updates }
+    
+    // Apply optimistic update
+    items.value[originalIndex] = optimisticItem
+    pendingUpdates.value.set(id, optimisticItem)
+    
+    // Perform actual update
+    updateFn(id, updates)
+      .then((updatedItem) => {
+        // Success - replace with server response
+        const currentIndex = items.value.findIndex(item => item.id === id)
+        if (currentIndex >= 0) {
+          items.value[currentIndex] = updatedItem
+        }
+        pendingUpdates.value.delete(id)
+        failedUpdates.value.delete(id)
+      })
+      .catch((error) => {
+        // Failure - revert optimistic update
+        const currentIndex = items.value.findIndex(item => item.id === id)
+        if (currentIndex >= 0) {
+          items.value[currentIndex] = originalItem
+        }
+        pendingUpdates.value.delete(id)
+        failedUpdates.value.set(id, { item: originalItem, error })
+      })
+  }
+  
+  const retryFailedUpdate = (id: string, updateFn: (id: string, updates: Partial<T>) => Promise<T>) => {
+    const failed = failedUpdates.value.get(id)
+    if (!failed) return
+    
+    failedUpdates.value.delete(id)
+    // Determine what updates to retry based on the failed item
+    const updates = {} // Extract differences between original and intended state
+    applyOptimisticUpdate(ref([]), id, updates, updateFn)
+  }
+  
+  return {
+    pendingUpdates: readonly(pendingUpdates),
+    failedUpdates: readonly(failedUpdates),
+    applyOptimisticUpdate,
+    retryFailedUpdate
+  }
+}
+
+// Real-time sync pattern
+export function useRealtimeSync<T extends { id: string; updatedAt: string }>(
+  items: Ref<T[]>,
+  websocketUrl: string
+) {
+  const socket = ref<WebSocket | null>(null)
+  const isConnected = ref(false)
+  
+  const connect = () => {
+    socket.value = new WebSocket(websocketUrl)
+    
+    socket.value.onopen = () => {
+      isConnected.value = true
+      console.log('Realtime sync connected')
+    }
+    
+    socket.value.onmessage = (event) => {
+      try {
+        const update = JSON.parse(event.data)
+        handleRealtimeUpdate(update)
+      } catch (error) {
+        console.warn('Failed to parse realtime update:', error)
+      }
+    }
+    
+    socket.value.onclose = () => {
+      isConnected.value = false
+      console.log('Realtime sync disconnected')
+      // Implement reconnection logic
+      setTimeout(connect, 5000)
+    }
+  }
+  
+  const handleRealtimeUpdate = (update: {
+    type: 'create' | 'update' | 'delete'
+    item: T
+  }) => {
+    const { type, item } = update
+    const index = items.value.findIndex(i => i.id === item.id)
+    
+    switch (type) {
+      case 'create':
+        if (index === -1) {
+          items.value.unshift(item)
+        }
+        break
+        
+      case 'update':
+        if (index >= 0) {
+          // Only update if server version is newer
+          const existing = items.value[index]
+          if (new Date(item.updatedAt) > new Date(existing.updatedAt)) {
+            items.value[index] = item
+          }
+        }
+        break
+        
+      case 'delete':
+        if (index >= 0) {
+          items.value.splice(index, 1)
+        }
+        break
+    }
+  }
+  
+  const disconnect = () => {
+    socket.value?.close()
+    socket.value = null
+  }
+  
+  onMounted(connect)
+  onBeforeUnmount(disconnect)
+  
+  return {
+    isConnected: readonly(isConnected),
+    connect,
+    disconnect
+  }
+}
+```
+
+## 📋 Usage Guidelines
+
+### Store Organization
+- **Feature-based**: Group stores by domain (users, products, orders)
+- **Composition**: Use composable store patterns for reusable logic
+- **Single Responsibility**: Each store should handle one specific domain
+- **Type Safety**: Always use TypeScript interfaces for state shapes
+
+### Performance Best Practices
+- Use `storeToRefs()` for reactive destructuring in components
+- Prefer `computed` properties over getters for expensive operations
+- Implement caching strategies for frequently accessed data
+- Use `shallowRef` for large datasets that don't need deep reactivity
+
+### Enterprise Patterns
+- **Persistence**: Automatically save/restore critical state
+- **Optimistic Updates**: Immediate UI feedback with rollback capability
+- **Real-time Sync**: WebSocket integration for live data updates
+- **Error Recovery**: Graceful handling of failed operations
+- **Performance Monitoring**: Track slow operations and memory usage
+
+This advanced Pinia setup provides enterprise-grade state management with excellent developer experience, type safety, and performance optimization.

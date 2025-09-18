@@ -1,0 +1,820 @@
+---
+title: Enterprise Error Handling & Logging
+tags: [error-handling, logging, monitoring, enterprise, resilience]
+globs: ["src/**/*.ts", "src/**/*.vue"]
+---
+
+# Enterprise Error Handling & Logging
+
+## 🛡️ Comprehensive Error Classification
+
+### 1. Error Type System
+```typescript
+// types/errors.ts - Structured error taxonomy
+export enum ErrorSeverity {
+  LOW = 'low',
+  MEDIUM = 'medium', 
+  HIGH = 'high',
+  CRITICAL = 'critical'
+}
+
+export enum ErrorCategory {
+  NETWORK = 'network',
+  AUTHENTICATION = 'authentication',
+  AUTHORIZATION = 'authorization',
+  VALIDATION = 'validation',
+  BUSINESS_LOGIC = 'business_logic',
+  SYSTEM = 'system',
+  USER_INPUT = 'user_input',
+  EXTERNAL_SERVICE = 'external_service'
+}
+
+export interface ErrorContext {
+  userId?: string
+  sessionId?: string
+  route?: string
+  component?: string
+  action?: string
+  timestamp: Date
+  userAgent: string
+  metadata?: Record<string, any>
+}
+
+export abstract class AppError extends Error {
+  abstract readonly category: ErrorCategory
+  abstract readonly severity: ErrorSeverity
+  abstract readonly userMessage: string
+  abstract readonly isRetryable: boolean
+  
+  public readonly context: ErrorContext
+  public readonly errorId: string
+  
+  constructor(
+    message: string,
+    context: Partial<ErrorContext> = {},
+    public readonly originalError?: Error
+  ) {
+    super(message)
+    this.name = this.constructor.name
+    this.errorId = this.generateErrorId()
+    this.context = {
+      timestamp: new Date(),
+      userAgent: navigator.userAgent,
+      route: window.location.pathname,
+      ...context
+    }
+    
+    // Maintain proper stack trace
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor)
+    }
+  }
+  
+  private generateErrorId(): string {
+    return `${this.category}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  }
+  
+  toJSON() {
+    return {
+      errorId: this.errorId,
+      name: this.name,
+      message: this.message,
+      userMessage: this.userMessage,
+      category: this.category,
+      severity: this.severity,
+      isRetryable: this.isRetryable,
+      context: this.context,
+      stack: this.stack,
+      originalError: this.originalError?.message
+    }
+  }
+}
+
+// Specific error types
+export class NetworkError extends AppError {
+  readonly category = ErrorCategory.NETWORK
+  readonly severity = ErrorSeverity.MEDIUM
+  readonly isRetryable = true
+  
+  constructor(
+    message: string,
+    public readonly statusCode?: number,
+    public readonly endpoint?: string,
+    context?: Partial<ErrorContext>
+  ) {
+    super(message, context)
+  }
+  
+  get userMessage(): string {
+    if (this.statusCode === 0 || !navigator.onLine) {
+      return 'Please check your internet connection and try again.'
+    }
+    if (this.statusCode && this.statusCode >= 500) {
+      return 'Our servers are experiencing issues. Please try again in a few moments.'
+    }
+    return 'A network error occurred. Please try again.'
+  }
+}
+
+export class ValidationError extends AppError {
+  readonly category = ErrorCategory.VALIDATION
+  readonly severity = ErrorSeverity.LOW
+  readonly isRetryable = false
+  
+  constructor(
+    message: string,
+    public readonly field?: string,
+    public readonly validationRules?: string[],
+    context?: Partial<ErrorContext>
+  ) {
+    super(message, context)
+  }
+  
+  get userMessage(): string {
+    if (this.field) {
+      return `Please check the ${this.field} field and try again.`
+    }
+    return 'Please check your input and try again.'
+  }
+}
+
+export class AuthenticationError extends AppError {
+  readonly category = ErrorCategory.AUTHENTICATION
+  readonly severity = ErrorSeverity.HIGH
+  readonly isRetryable = false
+  
+  get userMessage(): string {
+    return 'Your session has expired. Please log in again.'
+  }
+}
+
+export class AuthorizationError extends AppError {
+  readonly category = ErrorCategory.AUTHORIZATION
+  readonly severity = ErrorSeverity.MEDIUM
+  readonly isRetryable = false
+  
+  get userMessage(): string {
+    return 'You do not have permission to perform this action.'
+  }
+}
+
+export class BusinessLogicError extends AppError {
+  readonly category = ErrorCategory.BUSINESS_LOGIC
+  readonly severity = ErrorSeverity.MEDIUM
+  readonly isRetryable = false
+  
+  constructor(
+    message: string,
+    public readonly businessRule: string,
+    context?: Partial<ErrorContext>
+  ) {
+    super(message, context)
+  }
+  
+  get userMessage(): string {
+    return this.message // Business logic errors can show user-friendly messages directly
+  }
+}
+```
+
+### 2. Centralized Error Handler
+```typescript
+// services/errorHandler.ts - Enterprise error management
+interface ErrorReporter {
+  report(error: AppError): Promise<void>
+}
+
+interface RetryStrategy {
+  shouldRetry(error: AppError, attemptCount: number): boolean
+  getDelay(attemptCount: number): number
+}
+
+class ExponentialBackoffRetry implements RetryStrategy {
+  constructor(
+    private maxAttempts: number = 3,
+    private baseDelay: number = 1000,
+    private maxDelay: number = 10000
+  ) {}
+  
+  shouldRetry(error: AppError, attemptCount: number): boolean {
+    return error.isRetryable && attemptCount < this.maxAttempts
+  }
+  
+  getDelay(attemptCount: number): number {
+    const delay = this.baseDelay * Math.pow(2, attemptCount - 1)
+    return Math.min(delay, this.maxDelay)
+  }
+}
+
+class RemoteErrorReporter implements ErrorReporter {
+  constructor(
+    private endpoint: string,
+    private apiKey: string
+  ) {}
+  
+  async report(error: AppError): Promise<void> {
+    try {
+      await fetch(this.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify(error.toJSON())
+      })
+    } catch (reportingError) {
+      // Fallback to local logging if reporting fails
+      console.error('Failed to report error:', reportingError)
+      this.fallbackToLocalStorage(error)
+    }
+  }
+  
+  private fallbackToLocalStorage(error: AppError): void {
+    try {
+      const errors = JSON.parse(localStorage.getItem('pendingErrors') || '[]')
+      errors.push(error.toJSON())
+      // Keep only last 50 errors to prevent storage overflow
+      if (errors.length > 50) {
+        errors.splice(0, errors.length - 50)
+      }
+      localStorage.setItem('pendingErrors', JSON.stringify(errors))
+    } catch {
+      // If localStorage fails, give up gracefully
+    }
+  }
+}
+
+export class ErrorHandler {
+  private reporters: ErrorReporter[] = []
+  private retryStrategy: RetryStrategy
+  private userNotificationHandler?: (error: AppError) => void
+  
+  constructor() {
+    this.retryStrategy = new ExponentialBackoffRetry()
+    this.setupGlobalHandlers()
+  }
+  
+  addReporter(reporter: ErrorReporter): void {
+    this.reporters.push(reporter)
+  }
+  
+  setUserNotificationHandler(handler: (error: AppError) => void): void {
+    this.userNotificationHandler = handler
+  }
+  
+  async handle(error: unknown, context?: Partial<ErrorContext>): Promise<void> {
+    const appError = this.normalizeError(error, context)
+    
+    // Log to console in development
+    if (import.meta.env.DEV) {
+      console.group(`🚨 ${appError.name} [${appError.severity}]`)
+      console.error('Message:', appError.message)
+      console.error('Context:', appError.context)
+      console.error('Stack:', appError.stack)
+      if (appError.originalError) {
+        console.error('Original:', appError.originalError)
+      }
+      console.groupEnd()
+    }
+    
+    // Report to external services
+    await this.reportError(appError)
+    
+    // Notify user based on severity
+    this.notifyUser(appError)
+  }
+  
+  async handleWithRetry<T>(
+    operation: () => Promise<T>,
+    context?: Partial<ErrorContext>
+  ): Promise<T> {
+    let lastError: AppError
+    let attemptCount = 0
+    
+    while (true) {
+      attemptCount++
+      
+      try {
+        return await operation()
+      } catch (error) {
+        lastError = this.normalizeError(error, context)
+        
+        if (!this.retryStrategy.shouldRetry(lastError, attemptCount)) {
+          await this.handle(lastError, context)
+          throw lastError
+        }
+        
+        const delay = this.retryStrategy.getDelay(attemptCount)
+        console.warn(`Retrying in ${delay}ms (attempt ${attemptCount})`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+  }
+  
+  private normalizeError(error: unknown, context?: Partial<ErrorContext>): AppError {
+    if (error instanceof AppError) {
+      return error
+    }
+    
+    if (error instanceof Error) {
+      // Try to classify common error types
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        return new NetworkError(error.message, undefined, undefined, context)
+      }
+      
+      if (error.message.includes('401') || error.message.includes('unauthorized')) {
+        return new AuthenticationError(error.message, context, error)
+      }
+      
+      if (error.message.includes('403') || error.message.includes('forbidden')) {
+        return new AuthorizationError(error.message, context, error)
+      }
+      
+      // Generic system error
+      return new (class extends AppError {
+        readonly category = ErrorCategory.SYSTEM
+        readonly severity = ErrorSeverity.MEDIUM
+        readonly isRetryable = false
+        readonly userMessage = 'An unexpected error occurred. Please try again.'
+      })(error.message, context, error)
+    }
+    
+    // Handle string errors or other types
+    const message = typeof error === 'string' ? error : 'Unknown error occurred'
+    return new (class extends AppError {
+      readonly category = ErrorCategory.SYSTEM
+      readonly severity = ErrorSeverity.LOW
+      readonly isRetryable = false
+      readonly userMessage = 'An unexpected error occurred. Please try again.'
+    })(message, context)
+  }
+  
+  private async reportError(error: AppError): Promise<void> {
+    // Only report medium+ severity errors to reduce noise
+    if (error.severity === ErrorSeverity.LOW) {
+      return
+    }
+    
+    const reportPromises = this.reporters.map(reporter => 
+      reporter.report(error).catch(reportingError => {
+        console.warn('Error reporter failed:', reportingError)
+      })
+    )
+    
+    await Promise.allSettled(reportPromises)
+  }
+  
+  private notifyUser(error: AppError): void {
+    if (this.userNotificationHandler) {
+      this.userNotificationHandler(error)
+    }
+  }
+  
+  private setupGlobalHandlers(): void {
+    // Unhandled promise rejections
+    window.addEventListener('unhandledrejection', (event) => {
+      this.handle(event.reason, {
+        component: 'global',
+        action: 'unhandledrejection'
+      })
+    })
+    
+    // Unhandled errors
+    window.addEventListener('error', (event) => {
+      this.handle(event.error, {
+        component: 'global',
+        action: 'error',
+        metadata: {
+          filename: event.filename,
+          lineno: event.lineno,
+          colno: event.colno
+        }
+      })
+    })
+    
+    // Vue error handler integration
+    app.config.errorHandler = (error, instance, info) => {
+      this.handle(error, {
+        component: instance?.$options.name || 'Unknown',
+        action: info,
+        metadata: {
+          componentProps: instance?.$props,
+          componentData: instance?.$data
+        }
+      })
+    }
+  }
+}
+
+// Global error handler instance
+export const errorHandler = new ErrorHandler()
+
+// Setup error reporting
+if (import.meta.env.PROD) {
+  errorHandler.addReporter(
+    new RemoteErrorReporter(
+      import.meta.env.VITE_ERROR_REPORTING_ENDPOINT,
+      import.meta.env.VITE_ERROR_REPORTING_API_KEY
+    )
+  )
+}
+```
+
+### 3. Vue Integration Patterns
+```typescript
+// composables/useErrorHandling.ts
+export function useErrorHandling() {
+  const { $toast } = useNuxtApp()
+  
+  // Setup user notification handler
+  errorHandler.setUserNotificationHandler((error: AppError) => {
+    switch (error.severity) {
+      case ErrorSeverity.CRITICAL:
+        $toast.error(error.userMessage, {
+          duration: 0, // Don't auto-dismiss
+          action: {
+            label: 'Reload Page',
+            handler: () => window.location.reload()
+          }
+        })
+        break
+        
+      case ErrorSeverity.HIGH:
+        $toast.error(error.userMessage, { duration: 8000 })
+        break
+        
+      case ErrorSeverity.MEDIUM:
+        $toast.warning(error.userMessage, { duration: 5000 })
+        break
+        
+      case ErrorSeverity.LOW:
+        $toast.info(error.userMessage, { duration: 3000 })
+        break
+    }
+  })
+  
+  const handleError = (error: unknown, context?: Partial<ErrorContext>) => {
+    return errorHandler.handle(error, context)
+  }
+  
+  const handleWithRetry = <T>(
+    operation: () => Promise<T>,
+    context?: Partial<ErrorContext>
+  ): Promise<T> => {
+    return errorHandler.handleWithRetry(operation, context)
+  }
+  
+  const safeAsync = <T>(
+    asyncFn: () => Promise<T>,
+    fallback?: T
+  ) => {
+    return async (): Promise<T | undefined> => {
+      try {
+        return await asyncFn()
+      } catch (error) {
+        await handleError(error)
+        return fallback
+      }
+    }
+  }
+  
+  return {
+    handleError,
+    handleWithRetry,
+    safeAsync
+  }
+}
+
+// Component-level error boundary
+export function useErrorBoundary(componentName: string) {
+  const { handleError } = useErrorHandling()
+  
+  const captureError = (error: unknown, action?: string) => {
+    handleError(error, {
+      component: componentName,
+      action
+    })
+  }
+  
+  const wrapAsync = <T extends (...args: any[]) => Promise<any>>(
+    fn: T,
+    actionName?: string
+  ): T => {
+    return (async (...args: Parameters<T>) => {
+      try {
+        return await fn(...args)
+      } catch (error) {
+        captureError(error, actionName || fn.name)
+        throw error
+      }
+    }) as T
+  }
+  
+  return {
+    captureError,
+    wrapAsync
+  }
+}
+```
+
+### 4. API Error Handling
+```typescript
+// services/apiClient.ts - Robust API error handling
+interface ApiClientConfig {
+  baseURL: string
+  timeout?: number
+  retryConfig?: {
+    maxAttempts: number
+    retryDelay: number
+  }
+}
+
+class ApiClient {
+  private axiosInstance: AxiosInstance
+  
+  constructor(config: ApiClientConfig) {
+    this.axiosInstance = axios.create({
+      baseURL: config.baseURL,
+      timeout: config.timeout || 10000
+    })
+    
+    this.setupInterceptors()
+  }
+  
+  private setupInterceptors(): void {
+    // Request interceptor
+    this.axiosInstance.interceptors.request.use(
+      (config) => {
+        // Add authentication, request ID, etc.
+        config.headers['X-Request-ID'] = this.generateRequestId()
+        return config
+      },
+      (error) => {
+        return Promise.reject(this.transformError(error))
+      }
+    )
+    
+    // Response interceptor
+    this.axiosInstance.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        return Promise.reject(this.transformError(error))
+      }
+    )
+  }
+  
+  private transformError(error: AxiosError): AppError {
+    const context: Partial<ErrorContext> = {
+      metadata: {
+        url: error.config?.url,
+        method: error.config?.method,
+        requestId: error.config?.headers?.['X-Request-ID']
+      }
+    }
+    
+    if (error.response) {
+      // Server responded with error status
+      const { status, data } = error.response
+      
+      switch (status) {
+        case 400:
+          return new ValidationError(
+            this.extractErrorMessage(data) || 'Invalid request',
+            undefined,
+            undefined,
+            context
+          )
+          
+        case 401:
+          return new AuthenticationError(
+            'Authentication required',
+            context
+          )
+          
+        case 403:
+          return new AuthorizationError(
+            'Access denied',
+            context
+          )
+          
+        case 404:
+          return new BusinessLogicError(
+            'Resource not found',
+            'resource_not_found',
+            context
+          )
+          
+        case 422:
+          return new ValidationError(
+            this.extractErrorMessage(data) || 'Validation failed',
+            this.extractFieldName(data),
+            this.extractValidationRules(data),
+            context
+          )
+          
+        case 429:
+          return new NetworkError(
+            'Too many requests',
+            status,
+            error.config?.url,
+            context
+          )
+          
+        case 500:
+        case 502:
+        case 503:
+        case 504:
+          return new NetworkError(
+            'Server error',
+            status,
+            error.config?.url,
+            context
+          )
+          
+        default:
+          return new NetworkError(
+            `HTTP ${status}: ${this.extractErrorMessage(data)}`,
+            status,
+            error.config?.url,
+            context
+          )
+      }
+    } else if (error.request) {
+      // Network error or timeout
+      return new NetworkError(
+        'Network connection failed',
+        0,
+        error.config?.url,
+        context
+      )
+    } else {
+      // Something else happened
+      return new NetworkError(
+        error.message,
+        undefined,
+        error.config?.url,
+        context
+      )
+    }
+  }
+  
+  private extractErrorMessage(data: any): string | undefined {
+    // Handle various API error response formats
+    if (typeof data === 'string') return data
+    if (data?.message) return data.message
+    if (data?.error) return data.error
+    if (data?.errors?.[0]?.message) return data.errors[0].message
+    return undefined
+  }
+  
+  private extractFieldName(data: any): string | undefined {
+    if (data?.field) return data.field
+    if (data?.errors?.[0]?.field) return data.errors[0].field
+    return undefined
+  }
+  
+  private extractValidationRules(data: any): string[] | undefined {
+    if (data?.rules) return data.rules
+    if (data?.errors?.[0]?.rules) return data.errors[0].rules
+    return undefined
+  }
+  
+  private generateRequestId(): string {
+    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  }
+  
+  // Public API methods with error handling
+  async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.axiosInstance.get<T>(url, config)
+    return response.data
+  }
+  
+  async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.axiosInstance.post<T>(url, data, config)
+    return response.data
+  }
+  
+  async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.axiosInstance.put<T>(url, data, config)
+    return response.data
+  }
+  
+  async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.axiosInstance.delete<T>(url, config)
+    return response.data
+  }
+}
+
+export const apiClient = new ApiClient({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  timeout: 10000,
+  retryConfig: {
+    maxAttempts: 3,
+    retryDelay: 1000
+  }
+})
+```
+
+## 📊 Error Analytics & Monitoring
+
+### 5. Error Analytics Dashboard
+```typescript
+// utils/errorAnalytics.ts
+interface ErrorMetrics {
+  totalErrors: number
+  errorsByCategory: Record<ErrorCategory, number>
+  errorsBySeverity: Record<ErrorSeverity, number>
+  topErrors: Array<{ message: string; count: number }>
+  errorTrends: Array<{ timestamp: Date; count: number }>
+}
+
+class ErrorAnalytics {
+  private errors: AppError[] = []
+  private maxStoredErrors = 1000
+  
+  recordError(error: AppError): void {
+    this.errors.push(error)
+    
+    // Keep only recent errors to prevent memory issues
+    if (this.errors.length > this.maxStoredErrors) {
+      this.errors = this.errors.slice(-this.maxStoredErrors)
+    }
+  }
+  
+  getMetrics(timeRange?: { start: Date; end: Date }): ErrorMetrics {
+    let filteredErrors = this.errors
+    
+    if (timeRange) {
+      filteredErrors = this.errors.filter(error => 
+        error.context.timestamp >= timeRange.start &&
+        error.context.timestamp <= timeRange.end
+      )
+    }
+    
+    return {
+      totalErrors: filteredErrors.length,
+      errorsByCategory: this.groupByCategory(filteredErrors),
+      errorsBySeverity: this.groupBySeverity(filteredErrors),
+      topErrors: this.getTopErrors(filteredErrors),
+      errorTrends: this.getErrorTrends(filteredErrors)
+    }
+  }
+  
+  private groupByCategory(errors: AppError[]): Record<ErrorCategory, number> {
+    return errors.reduce((acc, error) => {
+      acc[error.category] = (acc[error.category] || 0) + 1
+      return acc
+    }, {} as Record<ErrorCategory, number>)
+  }
+  
+  private groupBySeverity(errors: AppError[]): Record<ErrorSeverity, number> {
+    return errors.reduce((acc, error) => {
+      acc[error.severity] = (acc[error.severity] || 0) + 1
+      return acc
+    }, {} as Record<ErrorSeverity, number>)
+  }
+  
+  private getTopErrors(errors: AppError[]): Array<{ message: string; count: number }> {
+    const errorCounts = errors.reduce((acc, error) => {
+      const key = error.message
+      acc[key] = (acc[key] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+    
+    return Object.entries(errorCounts)
+      .map(([message, count]) => ({ message, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+  }
+  
+  private getErrorTrends(errors: AppError[]): Array<{ timestamp: Date; count: number }> {
+    // Group errors by hour
+    const hourlyGroups = errors.reduce((acc, error) => {
+      const hour = new Date(error.context.timestamp)
+      hour.setMinutes(0, 0, 0)
+      const key = hour.toISOString()
+      
+      acc[key] = (acc[key] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+    
+    return Object.entries(hourlyGroups)
+      .map(([timestamp, count]) => ({
+        timestamp: new Date(timestamp),
+        count
+      }))
+      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+  }
+}
+
+export const errorAnalytics = new ErrorAnalytics()
+
+// Integrate with error handler
+errorHandler.addReporter({
+  async report(error: AppError): Promise<void> {
+    errorAnalytics.recordError(error)
+  }
+})
+```
+
+This enterprise-grade error handling system provides comprehensive error management, user-friendly notifications, detailed logging, retry mechanisms, and analytics - essential for production Vue 3 applications.

@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from "fs";
 import { join } from "path";
 
 const ROOT = ".cursor/rules";
-const MAX_LINES = 120;
+const MAX_LINES = 1000;
 
 function walk(dir){
   return readdirSync(dir).flatMap(f=>{

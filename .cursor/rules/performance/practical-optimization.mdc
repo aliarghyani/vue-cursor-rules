@@ -1,0 +1,431 @@
+---
+title: Practical Vue 3 Performance
+tags: [performance, optimization, practical]
+globs: ["src/**/*.vue", "src/**/*.ts", "src/**/*.js"]
+---
+
+# Practical Vue 3 Performance
+
+## Overview
+Simple, effective performance optimizations that make a real difference. Focus on high-impact, easy-to-implement improvements.
+
+## Core Principles
+- Measure first, optimize second
+- Start with the biggest impact items
+- Keep it simple and maintainable
+- User experience over perfect metrics
+
+## Quick Wins (High Impact, Low Effort)
+
+### 1. Lazy Loading Components
+```vue
+<template>
+  <div>
+    <!-- Load heavy components only when needed -->
+    <UserModal v-if="showModal" />
+    <HeavyChart v-if="showChart" />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { defineAsyncComponent } from 'vue'
+
+// Lazy load heavy components
+const UserModal = defineAsyncComponent(() => import('@/components/UserModal.vue'))
+const HeavyChart = defineAsyncComponent(() => import('@/components/Chart.vue'))
+
+const showModal = ref(false)
+const showChart = ref(false)
+</script>
+```
+
+### 2. V-Show vs V-If
+```vue
+<template>
+  <!-- Use v-show for frequently toggled elements -->
+  <div v-show="isVisible" class="sidebar">
+    <!-- Expensive content that toggles often -->
+  </div>
+  
+  <!-- Use v-if for rarely shown elements -->
+  <div v-if="hasError" class="error-modal">
+    <!-- Heavy component that's rarely shown -->
+  </div>
+</template>
+```
+
+### 3. Computed vs Methods
+```vue
+<script setup lang="ts">
+// ✅ Good: Use computed for expensive calculations
+const expensiveValue = computed(() => {
+  return items.value
+    .filter(item => item.active)
+    .map(item => item.name)
+    .join(', ')
+})
+
+// ❌ Avoid: Methods run on every render
+const getExpensiveValue = () => {
+  return items.value
+    .filter(item => item.active)
+    .map(item => item.name)
+    .join(', ')
+}
+</script>
+
+<template>
+  <!-- This recalculates only when items change -->
+  <p>{{ expensiveValue }}</p>
+  
+  <!-- This runs on every render -->
+  <p>{{ getExpensiveValue() }}</p>
+</template>
+```
+
+## List Performance
+
+### 4. Proper Key Usage
+```vue
+<template>
+  <!-- ✅ Good: Stable, unique keys -->
+  <div v-for="user in users" :key="user.id">
+    {{ user.name }}
+  </div>
+  
+  <!-- ❌ Avoid: Index as key (unstable) -->
+  <div v-for="(user, index) in users" :key="index">
+    {{ user.name }}
+  </div>
+  
+  <!-- ❌ Avoid: Non-unique keys -->
+  <div v-for="user in users" :key="user.name">
+    {{ user.name }}
+  </div>
+</template>
+```
+
+### 5. Virtual Scrolling for Large Lists
+```vue
+<template>
+  <!-- For lists with 1000+ items -->
+  <div class="virtual-list" ref="container">
+    <div
+      v-for="item in visibleItems"
+      :key="item.id"
+      class="list-item"
+    >
+      {{ item.name }}
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+// Simple virtual scrolling implementation
+const container = ref<HTMLElement>()
+const visibleItems = ref<Item[]>([])
+const itemHeight = 50
+const visibleCount = 20
+
+const updateVisibleItems = () => {
+  if (!container.value) return
+  
+  const scrollTop = container.value.scrollTop
+  const startIndex = Math.floor(scrollTop / itemHeight)
+  const endIndex = Math.min(startIndex + visibleCount, allItems.value.length)
+  
+  visibleItems.value = allItems.value.slice(startIndex, endIndex)
+}
+
+onMounted(() => {
+  container.value?.addEventListener('scroll', updateVisibleItems)
+  updateVisibleItems()
+})
+</script>
+```
+
+## Memory Management
+
+### 6. Cleanup Event Listeners
+```vue
+<script setup lang="ts">
+let intervalId: number | null = null
+
+onMounted(() => {
+  // Set up listeners
+  intervalId = setInterval(() => {
+    console.log('Interval running')
+  }, 1000)
+  
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  // Clean up listeners
+  if (intervalId) {
+    clearInterval(intervalId)
+  }
+  
+  window.removeEventListener('resize', handleResize)
+})
+
+const handleResize = () => {
+  // Handle resize
+}
+</script>
+```
+
+### 7. Debouncing User Input
+```vue
+<template>
+  <input
+    v-model="searchQuery"
+    @input="debouncedSearch"
+    placeholder="Search users..."
+  >
+</template>
+
+<script setup lang="ts">
+import { debounce } from 'lodash-es'
+
+const searchQuery = ref('')
+const searchResults = ref<User[]>([])
+
+// Debounce expensive operations
+const debouncedSearch = debounce(async () => {
+  if (!searchQuery.value) {
+    searchResults.value = []
+    return
+  }
+  
+  try {
+    const response = await fetch(`/api/search?q=${searchQuery.value}`)
+    searchResults.value = await response.json()
+  } catch (error) {
+    console.error('Search failed:', error)
+  }
+}, 300)
+
+// Simple debounce if you don't want lodash
+const simpleDebounce = (func: Function, wait: number) => {
+  let timeout: number | null = null
+  return (...args: any[]) => {
+    if (timeout) clearTimeout(timeout)
+    timeout = setTimeout(() => func.apply(this, args), wait)
+  }
+}
+</script>
+```
+
+## Advanced Optimizations
+
+### 8. Shallow vs Deep Reactivity
+```vue
+<script setup lang="ts">
+import { shallowRef, shallowReactive } from 'vue'
+
+// Use shallowRef for large objects that don't need deep reactivity
+const largeDataSet = shallowRef<LargeObject[]>([])
+
+// Use shallowReactive for objects with many properties
+const formData = shallowReactive({
+  field1: '',
+  field2: '',
+  field3: '',
+  // ... many fields
+})
+
+// Trigger reactivity manually when needed
+const updateLargeDataSet = (newData: LargeObject[]) => {
+  largeDataSet.value = newData
+  // Reactivity triggers automatically
+}
+</script>
+```
+
+### 9. V-Memo for Expensive Renders
+```vue
+<template>
+  <!-- Cache render result based on dependencies -->
+  <div v-memo="[user.id, user.lastUpdated]">
+    <ExpensiveUserCard :user="user" />
+  </div>
+  
+  <!-- List with v-memo -->
+  <div
+    v-for="item in items"
+    :key="item.id"
+    v-memo="[item.id, item.status, selectedItems.includes(item.id)]"
+  >
+    <ComplexListItem :item="item" :selected="selectedItems.includes(item.id)" />
+  </div>
+</template>
+```
+
+### 10. Component Splitting
+```vue
+<!-- ❌ Heavy single component -->
+<template>
+  <div class="dashboard">
+    <div class="charts"><!-- Heavy charts --></div>
+    <div class="tables"><!-- Heavy tables --></div>
+    <div class="sidebar"><!-- Heavy sidebar --></div>
+  </div>
+</template>
+
+<!-- ✅ Split into smaller components -->
+<template>
+  <div class="dashboard">
+    <ChartSection v-if="showCharts" />
+    <TableSection v-if="showTables" />
+    <Sidebar v-if="showSidebar" />
+  </div>
+</template>
+
+<script setup lang="ts">
+// Each component can be optimized independently
+const ChartSection = defineAsyncComponent(() => import('./ChartSection.vue'))
+const TableSection = defineAsyncComponent(() => import('./TableSection.vue'))
+const Sidebar = defineAsyncComponent(() => import('./Sidebar.vue'))
+</script>
+```
+
+## Image and Asset Optimization
+
+### 11. Lazy Loading Images
+```vue
+<template>
+  <img
+    v-for="image in images"
+    :key="image.id"
+    :src="image.loaded ? image.src : placeholder"
+    :alt="image.alt"
+    @load="handleImageLoad(image)"
+    loading="lazy"
+  >
+</template>
+
+<script setup lang="ts">
+const placeholder = '/images/placeholder.jpg'
+
+const handleImageLoad = (image: ImageItem) => {
+  image.loaded = true
+}
+
+// Use Intersection Observer for custom lazy loading
+const useIntersectionObserver = () => {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const img = entry.target as HTMLImageElement
+        img.src = img.dataset.src || ''
+        observer.unobserve(img)
+      }
+    })
+  })
+  
+  return observer
+}
+</script>
+```
+
+## Performance Monitoring
+
+### 12. Simple Performance Tracking
+```typescript
+// composables/usePerformance.ts
+export function usePerformance() {
+  const startTime = ref<number>(0)
+  const endTime = ref<number>(0)
+  
+  const start = (label: string) => {
+    startTime.value = performance.now()
+    console.time(label)
+  }
+  
+  const end = (label: string) => {
+    endTime.value = performance.now()
+    console.timeEnd(label)
+    console.log(`${label} took ${endTime.value - startTime.value}ms`)
+  }
+  
+  const measure = async <T>(label: string, fn: () => Promise<T>): Promise<T> => {
+    start(label)
+    try {
+      const result = await fn()
+      end(label)
+      return result
+    } catch (error) {
+      end(label)
+      throw error
+    }
+  }
+  
+  return { start, end, measure }
+}
+
+// Usage in components
+const { measure } = usePerformance()
+
+const loadData = async () => {
+  await measure('Data Loading', async () => {
+    const response = await fetch('/api/data')
+    data.value = await response.json()
+  })
+}
+```
+
+## Quick Performance Checklist
+
+### Before Optimizing
+- [ ] Profile your app with Vue DevTools
+- [ ] Identify actual performance bottlenecks
+- [ ] Measure current performance metrics
+- [ ] Set realistic performance goals
+
+### Easy Wins
+- [ ] Add `loading="lazy"` to images
+- [ ] Use `v-show` for frequently toggled elements
+- [ ] Replace methods with computed properties
+- [ ] Add proper keys to `v-for` loops
+- [ ] Lazy load heavy components
+
+### When You Have More Time
+- [ ] Implement debouncing for search inputs
+- [ ] Add virtual scrolling for large lists
+- [ ] Use `shallowRef` for large datasets
+- [ ] Split large components into smaller ones
+- [ ] Add intersection observers for lazy loading
+
+### Advanced Optimizations
+- [ ] Use `v-memo` for expensive renders
+- [ ] Implement code splitting with dynamic imports
+- [ ] Add service worker for caching
+- [ ] Optimize bundle size with tree shaking
+- [ ] Use web workers for heavy computations
+
+## Common Performance Mistakes
+
+```vue
+<!-- ❌ Expensive operations in template -->
+<template>
+  <div v-for="item in items.filter(i => i.active).sort()" :key="item.id">
+    {{ item.name }}
+  </div>
+</template>
+
+<!-- ✅ Use computed properties -->
+<template>
+  <div v-for="item in activeItems" :key="item.id">
+    {{ item.name }}
+  </div>
+</template>
+
+<script setup>
+const activeItems = computed(() => 
+  items.value.filter(i => i.active).sort()
+)
+</script>
+```
+
+Remember: **Premature optimization is the root of all evil**. Always measure first, then optimize the bottlenecks that actually matter to your users!

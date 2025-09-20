@@ -1,0 +1,352 @@
+---
+title: Vue 3 Component Essentials
+tags: [components, composition-api, typescript]
+globs: ["src/components/**/*.vue", "src/views/**/*.vue", "src/**/*.vue"]
+---
+
+# Vue 3 Component Essentials
+
+## Standard Component Template
+```vue
+<template>
+  <div class="component-name">
+    <header v-if="title" class="component-name__header">
+      <h2>{{ title }}</h2>
+    </header>
+    
+    <main class="component-name__content">
+      <slot />
+    </main>
+    
+    <div v-if="loading" class="component-name__loading" aria-live="polite">
+      Loading...
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+interface Props {
+  title?: string
+  loading?: boolean
+}
+
+interface Emits {
+  (e: 'update', value: string): void
+  (e: 'close'): void
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  title: '',
+  loading: false
+})
+
+const emit = defineEmits<Emits>()
+</script>
+
+<style scoped>
+.component-name {
+  /* Component styles */
+}
+</style>
+```
+
+## Form Component Pattern
+```vue
+<template>
+  <form @submit.prevent="handleSubmit" class="form">
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input
+        id="email"
+        v-model="form.email"
+        type="email"
+        :class="{ error: errors.email }"
+        :aria-describedby="errors.email ? 'email-error' : ''"
+      >
+      <span v-if="errors.email" id="email-error" role="alert">
+        {{ errors.email }}
+      </span>
+    </div>
+
+    <button type="submit" :disabled="isSubmitting || !isFormValid">
+      {{ isSubmitting ? 'Submitting...' : 'Submit' }}
+    </button>
+  </form>
+</template>
+
+<script setup lang="ts">
+interface FormData {
+  email: string
+  password: string
+}
+
+interface FormErrors {
+  email?: string
+  password?: string
+}
+
+const emit = defineEmits<{
+  (e: 'submit', data: FormData): void
+}>()
+
+const form = reactive<FormData>({
+  email: '',
+  password: ''
+})
+
+const errors = reactive<FormErrors>({})
+const isSubmitting = ref(false)
+
+const isFormValid = computed(() => {
+  return form.email && form.password && !Object.keys(errors).length
+})
+
+const validateEmail = (email: string): string | undefined => {
+  if (!email) return 'Email is required'
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Invalid email'
+  return undefined
+}
+
+watch(() => form.email, (newEmail) => {
+  errors.email = validateEmail(newEmail)
+})
+
+const handleSubmit = async () => {
+  errors.email = validateEmail(form.email)
+  
+  if (!isFormValid.value) return
+  
+  isSubmitting.value = true
+  try {
+    emit('submit', { ...form })
+  } finally {
+    isSubmitting.value = false
+  }
+}
+</script>
+```
+
+## Data List Component
+```vue
+<template>
+  <div class="data-list">
+    <div class="data-list__controls">
+      <input
+        v-model="searchQuery"
+        type="search"
+        placeholder="Search..."
+        class="search-input"
+      >
+      
+      <select v-model="selectedCategory" class="category-select">
+        <option value="">All</option>
+        <option v-for="category in categories" :key="category" :value="category">
+          {{ category }}
+        </option>
+      </select>
+    </div>
+
+    <div v-if="loading" class="loading">Loading...</div>
+    <div v-else-if="error" class="error">{{ error }}</div>
+    <div v-else-if="filteredItems.length === 0" class="empty">No items found</div>
+
+    <ul v-else class="data-list__items">
+      <li v-for="item in paginatedItems" :key="item.id" class="data-list__item">
+        <slot name="item" :item="item">
+          <div>
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.description }}</p>
+          </div>
+        </slot>
+      </li>
+    </ul>
+
+    <div v-if="totalPages > 1" class="pagination">
+      <button @click="currentPage--" :disabled="currentPage === 1">Previous</button>
+      <span>Page {{ currentPage }} of {{ totalPages }}</span>
+      <button @click="currentPage++" :disabled="currentPage === totalPages">Next</button>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+interface Item {
+  id: string | number
+  title: string
+  description: string
+  category?: string
+}
+
+interface Props {
+  items: Item[]
+  loading?: boolean
+  error?: string
+  itemsPerPage?: number
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  loading: false,
+  error: '',
+  itemsPerPage: 10
+})
+
+const searchQuery = ref('')
+const selectedCategory = ref('')
+const currentPage = ref(1)
+
+const categories = computed(() => {
+  const cats = new Set(props.items.map(item => item.category).filter(Boolean))
+  return Array.from(cats)
+})
+
+const filteredItems = computed(() => {
+  let filtered = props.items
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(item =>
+      item.title.toLowerCase().includes(query) ||
+      item.description.toLowerCase().includes(query)
+    )
+  }
+
+  if (selectedCategory.value) {
+    filtered = filtered.filter(item => item.category === selectedCategory.value)
+  }
+
+  return filtered
+})
+
+const totalPages = computed(() => {
+  return Math.ceil(filteredItems.value.length / props.itemsPerPage)
+})
+
+const paginatedItems = computed(() => {
+  const start = (currentPage.value - 1) * props.itemsPerPage
+  const end = start + props.itemsPerPage
+  return filteredItems.value.slice(start, end)
+})
+
+watch([searchQuery, selectedCategory], () => {
+  currentPage.value = 1
+})
+</script>
+```
+
+## Essential Composables
+
+### API Data Fetching
+```typescript
+// composables/useApi.ts
+export function useApi<T>(url: string) {
+  const data = ref<T | null>(null)
+  const loading = ref(false)
+  const error = ref<string | null>(null)
+
+  const execute = async () => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const response = await fetch(url)
+      if (!response.ok) throw new Error('Network error')
+      data.value = await response.json()
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Unknown error'
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return {
+    data: readonly(data),
+    loading: readonly(loading),
+    error: readonly(error),
+    execute,
+    refresh: execute
+  }
+}
+```
+
+### Local Storage State
+```typescript
+// composables/useLocalStorage.ts
+export function useLocalStorage<T>(key: string, defaultValue: T) {
+  const storedValue = localStorage.getItem(key)
+  const initialValue = storedValue ? JSON.parse(storedValue) : defaultValue
+
+  const state = ref<T>(initialValue)
+
+  const setValue = (value: T) => {
+    state.value = value
+    localStorage.setItem(key, JSON.stringify(value))
+  }
+
+  watch(
+    state,
+    (newValue) => {
+      localStorage.setItem(key, JSON.stringify(newValue))
+    },
+    { deep: true }
+  )
+
+  return [state, setValue] as const
+}
+```
+
+## Quick Patterns
+
+### Reactive State
+```typescript
+// Primitives
+const count = ref<number>(0)
+const message = ref<string>('')
+const isVisible = ref<boolean>(true)
+
+// Objects
+const user = reactive<User>({ id: '', name: '', email: '' })
+
+// Arrays
+const items = ref<Item[]>([])
+```
+
+### Event Handling
+```typescript
+// Basic events
+const handleClick = () => emit('click')
+const handleSelect = (item: Item) => emit('select', item)
+
+// Async events
+const handleSave = async () => {
+  try {
+    await saveData()
+    emit('saved')
+  } catch (error) {
+    emit('error', error)
+  }
+}
+```
+
+### Computed Properties
+```typescript
+// Simple computed
+const fullName = computed(() => `${firstName.value} ${lastName.value}`)
+
+// Complex filtering
+const activeItems = computed(() => 
+  items.value.filter(item => item.active)
+)
+```
+
+### Watchers
+```typescript
+// Watch single value
+watch(searchQuery, (newQuery) => {
+  if (newQuery) fetchResults(newQuery)
+})
+
+// Watch multiple values
+watch([prop1, prop2], ([newProp1, newProp2]) => {
+  updateSomething(newProp1, newProp2)
+})
+```

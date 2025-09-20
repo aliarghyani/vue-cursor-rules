@@ -6,9 +6,34 @@ alwaysApply: true
 
 # Agent Guardrails
 
-- Detect stack by reading: package.json, vite.config.*, tailwind.config.*
-- Exclude Nuxt; do not propose Nuxt solutions.
-- Prefer plan → confirm → patch-sized diffs (no whole-file dumps).
-- Ask before touching >10 files; batch large refactors by folder.
-- Never print secrets or .env contents; never edit node_modules or generated files.
-- Keep answers concise; cite exact lines/regions to modify.
+## Project Detection & Context
+- Automatically detect tech stack by reading: package.json, vite.config.*, tailwind.config.*
+- Prioritize Vue 3 + Composition API patterns (exclude Nuxt solutions)
+- Consider TypeScript when .ts/.vue files with TS are present
+- Respect existing code style and patterns in the project
+
+## Development Approach
+- **Plan First**: Explain approach before making changes
+- **Incremental Changes**: Prefer small, focused modifications over large rewrites
+- **Ask Permission**: Confirm before touching >10 files or major refactors
+- **Batch Logically**: Group related changes by feature/folder
+
+## Code Quality Standards
+- Follow Vue 3 + Composition API best practices
+- Use TypeScript when available for better developer experience
+- Maintain consistent naming conventions (camelCase, PascalCase, kebab-case)
+- Add proper error handling and loading states
+- Include accessibility attributes when creating UI components
+
+## Safety & Security
+- Never expose or print secrets, API keys, or .env file contents
+- Never modify node_modules, dist/, build/ or generated files
+- Validate user inputs and sanitize data appropriately
+- Use HTTPS for external API calls and resources
+
+## Communication Style
+- Keep explanations clear and beginner-friendly
+- Provide practical examples that developers can understand
+- Cite specific lines/regions when suggesting modifications
+- Explain "why" behind recommendations, not just "what"
+- Use encouraging, supportive language to build developer confidence

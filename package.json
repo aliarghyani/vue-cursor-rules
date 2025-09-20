@@ -1,9 +1,62 @@
 {
   "name": "vue3-cursor-rules",
-  "private": true,
+  "version": "1.0.0",
+  "description": "Production-ready Vue 3 development rules for Cursor IDE - Build better, faster, and more accessible Vue applications",
+  "keywords": [
+    "vue3",
+    "cursor",
+    "rules",
+    "typescript",
+    "development",
+    "accessibility",
+    "performance",
+    "best-practices",
+    "composition-api",
+    "pinia",
+    "vite"
+  ],
+  "homepage": "https://github.com/aliarghyani/vue-cursor-rules#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aliarghyani/vue-cursor-rules.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aliarghyani/vue-cursor-rules/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Ali Arghyani",
+    "email": "aliarghyani@gmail.com",
+    "url": "https://github.com/aliarghyani"
+  },
+  "private": false,
   "type": "module",
+  "files": [
+    ".cursor/",
+    "docs/",
+    "examples/",
+    "scripts/",
+    "README.md",
+    "LICENSE",
+    "CONTRIBUTING.md"
+  ],
   "scripts": {
     "lint:rules": "node scripts/lint-rules.mjs",
-    "measure:tokens": "node scripts/measure-tokens.mjs"
+    "measure:tokens": "node scripts/measure-tokens.mjs",
+    "validate": "npm run lint:rules && npm run measure:tokens",
+    "test:sample": "cd samples/minimal-vue-app && npm test",
+    "build:docs": "node scripts/build-docs.mjs",
+    "dev:sample": "cd samples/minimal-vue-app && npm run dev",
+    "setup:sample": "cd samples && npm create vue@latest minimal-vue-app -- --template vue-ts && cd minimal-vue-app && npm install",
+    "release": "npm run validate && npm version patch",
+    "release:minor": "npm run validate && npm version minor",
+    "release:major": "npm run validate && npm version major"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
   }
 }

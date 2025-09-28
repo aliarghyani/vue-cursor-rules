@@ -1,0 +1,27 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+# Pinia Store Convention
+
+Stores should be created using `defineStore` and expose state, getters and actions. Example from `app.store.ts`:
+```typescript
+export const useAppStore = defineStore({
+  id: "app",
+  state: () => ({
+    isDark: false,
+    language: "en",
+  }),
+  actions: {
+    updateTheme() {
+      this.isDark = !this.isDark
+      this.isDark ? document.documentElement.classList.add("dark") : document.documentElement.classList.remove("dark")
+    },
+  },
+})
+
+if (import.meta.hot) import.meta.hot.accept(acceptHMRUpdate(useAppStore, import.meta.hot))
+```
+Keep actions focused and ensure stores remain single responsibility.

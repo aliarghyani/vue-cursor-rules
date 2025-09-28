@@ -1,48 +1,31 @@
-# 🎯 Vue 3 Code Examples
+# Vue 3 Examples
 
-This directory contains practical, copy-paste ready examples that demonstrate the power of Vue 3 Cursor Rules in action.
+## 🎯 Essential Examples
 
-## 📁 Directory Structure
+### 1. Basic Component (`basic-component.vue`)
+- Standard component structure
+- Props and emits with TypeScript
+- Event handling
 
-```
-examples/
-├── components/          # Reusable component patterns
-│   ├── forms/          # Form components with validation
-│   ├── data-display/   # Tables, lists, cards
-│   └── navigation/     # Menus, breadcrumbs, tabs
-├── composables/        # Vue 3 composition functions
-│   ├── data/          # Data fetching and management
-│   ├── ui/            # UI state and interactions
-│   └── utilities/     # Helper functions
-├── stores/            # Pinia store patterns
-│   ├── api-stores/    # API integration patterns
-│   ├── ui-stores/     # UI state management
-│   └── complex/       # Advanced state scenarios
-├── patterns/          # Common development patterns
-│   ├── authentication/ # Login, signup, auth guards
-│   ├── crud/          # Create, read, update, delete
-│   └── real-time/     # WebSocket, SSE patterns
-└── templates/         # Project starter templates
-    ├── dashboard/     # Admin dashboard template
-    ├── blog/          # Content blog template
-    └── ecommerce/     # E-commerce template
-```
+### 2. Form Component (`form-component.vue`)
+- Form validation patterns
+- Reactive state management
+- Error handling
 
-## 🚀 Quick Start
+### 3. API Composable (`useApi.ts`)
+- Reusable API logic
+- Loading and error states
+- TypeScript generics
 
-1. **Browse examples** - Find patterns similar to your use case
-2. **Copy code** - Use the examples as starting points
-3. **Follow rules** - Let Cursor Rules guide your customizations
-4. **Iterate** - Build upon the patterns with AI assistance
+## Usage
 
-## 💡 How to Use
+Copy these patterns into your Vue 3 project. All examples use:
+- `<script setup>` syntax
+- TypeScript interfaces
+- Composition API
+- Modern Vue 3 patterns
 
-Each example includes:
-- ✅ **Working code** that follows Vue 3 best practices
-- 📝 **Documentation** explaining key patterns
-- 🔧 **Customization tips** for your specific needs
-- 🧪 **Test examples** showing how to test the code
+## UI Framework Variants
 
----
-
-*These examples are automatically validated against our Cursor Rules to ensure they represent current best practices.*
+For Vuetify and Quasar examples, see the cursor rules:
+- `.cursor/rules/ui-frameworks.mdc`

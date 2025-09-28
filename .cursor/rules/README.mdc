@@ -1,195 +1,45 @@
 ---
-title: Vue 3 Cursor Rules - Code Assistant
-tags: [overview, code-generation, assistant]
-globs: ["**/*.vue", "**/*.ts", "**/*.js"]
+description: Vue 3 Cursor Rules - Practical development patterns
+globs: 
+alwaysApply: true
 ---
 
-# Vue 3 Cursor Rules - AI Code Assistant
+# Vue 3 Cursor Rules
 
-## 🎯 Purpose
-Optimize AI code generation for Vue 3 applications. These rules help AI assistants write better, more consistent Vue 3 code following modern best practices.
+Practical, concise rules for Vue 3 development using Composition API.
 
-## 📋 Rule Categories
+## Available Rules
 
-### 🏗️ Core Structure Rules
-- **[Component Essentials](vue3/component-essentials.mdc)** - Standard component patterns and structures
-- **[Code Structure Patterns](vue3/progressive-patterns.mdc)** - Consistent code organization
-- **[Router Patterns](vue3/router-agent.mdc)** - Navigation and routing implementations
+### Core Patterns
+- `vue-fundamentals.mdc` - Essential Vue 3 Composition API patterns
+- `composables.mdc` - Reusable composition functions
+- `pinia-stores.mdc` - State management with Pinia
+- `vue-router.mdc` - Navigation and routing
+- `typescript-patterns.mdc` - TypeScript integration
+- `tailwind-patterns.mdc` - Tailwind CSS styling patterns
 
-### 🔧 TypeScript Integration
-- **[TypeScript Essentials](typescript/typescript-essentials.mdc)** - Practical TS patterns for Vue 3
-- **[Type Safety Excellence](typescript/type-safety-excellence.mdc)** - Advanced type patterns
+### Development Workflow
+- `component-testing.mdc` - Testing with Vitest and Vue Test Utils
+- `form-handling.mdc` - Form validation and submission
+- `api-integration.mdc` - Data fetching and API services
+- `project-structure.mdc` - Directory organization
 
-### ⚡ Performance & Quality
-- **[Practical Performance](performance/practical-optimization.mdc)** - High-impact optimizations
-- **[Agent Guardrails](global/00-agent-guardrails-always.mdc)** - Code quality standards
+## Features
 
-## 🚀 Quick Templates
+- **Context-aware**: Rules activate based on file patterns and content
+- **Non-restrictive**: Provides guidance without limiting creativity
+- **Practical**: Real working code examples
+- **Modern**: Focuses on Vue 3.4+ and Composition API
 
-### Basic Component
-```vue
-<template>
-  <div class="component-name">
-    <slot />
-  </div>
-</template>
+## Usage
 
-<script setup lang="ts">
-interface Props {
-  // Define props here
-}
+Rules automatically activate when working with relevant files:
+- `.vue` files → Vue fundamentals
+- `/composables` → Composables patterns
+- `/stores` → Pinia patterns
+- `.test.ts` → Testing patterns
+- `tailwind.config.*` → Tailwind patterns
 
-interface Emits {
-  // Define emits here
-}
+---
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
-</script>
-```
-
-### Form Component
-```vue
-<script setup lang="ts">
-interface FormData {
-  email: string
-  password: string
-}
-
-const form = reactive<FormData>({ email: '', password: '' })
-const errors = reactive<Record<keyof FormData, string>>({})
-const isSubmitting = ref(false)
-
-const handleSubmit = async () => {
-  // Validation and submission logic
-}
-</script>
-```
-
-### API Composable
-```typescript
-export function useApi<T>(url: string) {
-  const data = ref<T | null>(null)
-  const loading = ref(false)
-  const error = ref<string | null>(null)
-  
-  const execute = async () => {
-    loading.value = true
-    try {
-      const response = await fetch(url)
-      data.value = await response.json()
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Unknown error'
-    } finally {
-      loading.value = false
-    }
-  }
-  
-  return { data: readonly(data), loading: readonly(loading), error: readonly(error), execute }
-}
-```
-
-## 🎨 Code Generation Guidelines
-
-### ✅ Always Use
-- `<script setup>` syntax
-- TypeScript for better code assistance
-- Composition API patterns
-- Proper prop/emit interfaces
-- Error handling and loading states
-
-### 🔄 Common Patterns
-```typescript
-// Reactive state
-const data = ref<T | null>(null)
-const loading = ref(false)
-const error = ref<string | null>(null)
-
-// Form handling
-const form = reactive<FormData>({})
-const errors = reactive<FormErrors>({})
-const isSubmitting = ref(false)
-
-// API calls
-const { data, loading, error, execute } = useApi<DataType>('/api/endpoint')
-
-// Event handling
-const handleEvent = (payload: PayloadType) => {
-  emit('event-name', payload)
-}
-```
-
-### 🏷️ Interface Patterns
-```typescript
-// Component props
-interface Props {
-  title: string
-  items: Item[]
-  loading?: boolean
-}
-
-// Component emits
-interface Emits {
-  (e: 'select', item: Item): void
-  (e: 'update', value: string): void
-}
-
-// API responses
-interface ApiResponse<T> {
-  data: T
-  message: string
-  success: boolean
-}
-```
-
-## 🛠️ AI Assistant Instructions
-
-### Code Generation Focus
-1. **Structure First** - Use standard component templates
-2. **Type Safety** - Add TypeScript interfaces for props/emits
-3. **Error Handling** - Include loading/error states
-4. **Accessibility** - Add ARIA labels and semantic HTML
-5. **Performance** - Use `v-show` vs `v-if` appropriately
-
-### Avoid
-- Options API (use Composition API)
-- Nuxt.js patterns (Vue 3 + Vite focus)
-- Overly complex abstractions
-- Missing error handling
-- Prop mutations
-
-## 📊 Performance Checklist
-- [ ] Use `v-show` for frequent toggles
-- [ ] Add proper `:key` to `v-for`
-- [ ] Lazy load heavy components
-- [ ] Use computed over methods
-- [ ] Implement debouncing for search
-- [ ] Handle cleanup in `onUnmounted`
-
-## 🔍 Quick Reference
-
-### State Management
-```typescript
-// Local state
-const count = ref(0)
-const user = reactive({ name: '', email: '' })
-
-// Computed
-const doubled = computed(() => count.value * 2)
-
-// Watchers
-watch(count, (newVal) => console.log(newVal))
-```
-
-### Component Communication
-```typescript
-// Props down
-defineProps<{ data: DataType }>()
-
-// Events up
-const emit = defineEmits<{ (e: 'action', payload: any): void }>()
-
-// Two-way binding
-// Parent: <Child v-model="value" />
-// Child: defineModel<string>()
-```
+*Efficient development assistance for Vue 3 projects*

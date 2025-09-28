@@ -1,0 +1,82 @@
+---
+description: Vue 3 Composition API fundamentals and best practices
+globs: ["**/*.vue", "**/*.ts"]
+alwaysApply: true
+---
+# Vue 3 Fundamentals
+
+## Composition API Patterns
+
+Always use Composition API with `<script setup>`:
+
+```vue
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+
+// Reactive state
+const count = ref(0)
+const message = ref('')
+
+// Computed properties
+const doubleCount = computed(() => count.value * 2)
+
+// Methods
+const increment = () => count.value++
+
+// Lifecycle
+onMounted(() => {
+  console.log('Component mounted')
+})
+</script>
+
+<template>
+  <div>
+    <p>Count: {{ count }}</p>
+    <p>Double: {{ doubleCount }}</p>
+    <button @click="increment">Increment</button>
+  </div>
+</template>
+```
+
+## Props and Emits
+
+```vue
+<script setup lang="ts">
+interface Props {
+  title: string
+  count?: number
+}
+
+interface Emits {
+  update: [value: number]
+  close: []
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  count: 0
+})
+
+const emit = defineEmits<Emits>()
+
+const handleUpdate = (value: number) => {
+  emit('update', value)
+}
+</script>
+```
+
+## Reactivity Best Practices
+
+- Use `ref()` for primitives
+- Use `reactive()` for objects (sparingly)
+- Always access `.value` in script
+- Use `computed()` for derived state
+- Use `watch()` for side effects
+
+```typescript
+// Good
+const user = ref<User | null>(null)
+const isLoggedIn = computed(() => !!user.value)
+
+// Avoid
+const state = reactive({ user: null, isLoggedIn: false })
+```

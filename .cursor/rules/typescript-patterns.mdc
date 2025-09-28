@@ -1,0 +1,125 @@
+---
+description: TypeScript patterns and type safety in Vue 3
+globs: ["**/*.ts", "**/*.vue"]
+alwaysApply: false
+---
+# TypeScript Patterns
+
+## Component Props Typing
+
+```vue
+<script setup lang="ts">
+interface User {
+  id: number
+  name: string
+  email: string
+  avatar?: string
+}
+
+interface Props {
+  user: User
+  showEmail?: boolean
+  size?: 'sm' | 'md' | 'lg'
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  showEmail: true,
+  size: 'md'
+})
+
+interface Emits {
+  click: [user: User]
+  delete: [userId: number]
+}
+
+const emit = defineEmits<Emits>()
+</script>
+```
+
+## Reactive Refs with Types
+
+```typescript
+import { ref, computed, type Ref } from 'vue'
+
+// Primitive types
+const count = ref<number>(0)
+const message = ref<string>('')
+const isVisible = ref<boolean>(false)
+
+// Object types
+const user = ref<User | null>(null)
+const users = ref<User[]>([])
+
+// Computed with explicit typing
+const userDisplayName = computed<string>(() => {
+  return user.value?.name ?? 'Anonymous'
+})
+
+// Generic composable typing
+function useApi<T>(): {
+  data: Ref<T | null>
+  loading: Ref<boolean>
+  error: Ref<string | null>
+  fetch: () => Promise<void>
+} {
+  const data = ref<T | null>(null)
+  const loading = ref(false)
+  const error = ref<string | null>(null)
+  
+  const fetch = async () => {
+    // Implementation
+  }
+  
+  return { data, loading, error, fetch }
+}
+```
+
+## Store Typing
+
+```typescript
+// types/store.ts
+export interface UserState {
+  currentUser: User | null
+  users: User[]
+  loading: boolean
+}
+
+// stores/user.ts
+export const useUserStore = defineStore('user', (): UserState & UserActions => {
+  const currentUser = ref<User | null>(null)
+  const users = ref<User[]>([])
+  const loading = ref<boolean>(false)
+  
+  return {
+    currentUser,
+    users,
+    loading,
+    // ... actions
+  }
+})
+```
+
+## API Response Typing
+
+```typescript
+// types/api.ts
+export interface ApiResponse<T> {
+  data: T
+  message: string
+  success: boolean
+}
+
+export interface PaginatedResponse<T> extends ApiResponse<T[]> {
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
+// Usage
+const fetchUsers = (): Promise<ApiResponse<User[]>> => {
+  return api.get('/users')
+}
+```

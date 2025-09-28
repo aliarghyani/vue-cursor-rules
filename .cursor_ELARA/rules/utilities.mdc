@@ -1,0 +1,137 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Comprehensive utility functions and constants guidelines for Artemis Panel
+globs: src/utils/**/*
+alwaysApply: true
+---
+
+# Utilities
+
+## Organization Principles
+
+- Place generic helper functions in this folder and group related logic in separate files
+- Export utilities via `src/utils/index.ts` for barrel imports
+- Keep `constants.ts` as the single source for shared constants and enums
+- Each utility file should have a single responsibility
+
+## Available Utilities
+
+### Constants (`constants.ts`)
+Contains all application constants including:
+- `USER_ROLES` - User role definitions
+- `LEADSTATUSENUMS` - Lead status types
+- `CASESTATUSENUMS` - Case status types  
+- `FIELD_TYPES` - Form field type definitions
+- `COUNTRIES` - Country data
+- `ROUTES_NAME` - Application route names
+- `ACTIONS` - Action types
+- `STATUS_TYPES` - General status types
+- `PAYMENT_STATUS_ENUMS` - Payment status definitions
+- `COMMISSION_TYPE` - Commission type definitions
+
+### Error Parser (`errorParser.ts`)
+```typescript
+import { parseErrorMessage } from '@/utils/errorParser'
+
+// Automatically parses API errors to user-friendly messages
+const userMessage = parseErrorMessage(apiError)
+```
+
+### Currency Formatter (`formatCurrency.ts`)
+```typescript
+import { formatCurrency } from '@/utils/formatCurrency'
+
+// Formats currency values with proper locale
+const formatted = formatCurrency(amount, currencyCode)
+```
+
+### Chart Configuration (`chart.ts`)
+Contains chart-related configurations:
+- `BAR_CHART_CONFIG` - Default bar chart settings
+- `LABEL_OPTION` - Chart label options
+
+### Schema Utilities (`schemas.ts`)
+Contains:
+- `SCHEMA_CONTENT` - Schema content definitions
+
+## Usage Patterns
+
+### Importing Constants
+```typescript
+// ✅ GOOD - Import specific constants
+import { USER_ROLES, LEADSTATUSENUMS } from '@/utils/constants'
+
+const userRole = USER_ROLES.ADMIN
+const leadStatus = LEADSTATUSENUMS.NEW
+
+// ❌ BAD - Import entire constants object
+import * as CONSTANTS from '@/utils/constants'
+```
+
+### Adding New Constants
+```typescript
+// constants.ts
+export const NEW_FEATURE_TYPES = {
+  TYPE_A: 'type_a',
+  TYPE_B: 'type_b',
+  TYPE_C: 'type_c'
+} as const
+
+// Export from index.ts
+export { NEW_FEATURE_TYPES } from './constants'
+```
+
+### Creating New Utilities
+```typescript
+// utils/newUtility.ts
+export const formatDate = (date: Date, format: string): string => {
+  // Implementation
+}
+
+export const validateInput = (input: string): boolean => {
+  // Implementation
+}
+
+// Export from index.ts
+export { formatDate, validateInput } from './newUtility'
+```
+
+### Error Handling Utilities
+```typescript
+// Always use parseErrorMessage for API errors
+try {
+  await apiCall()
+} catch (error) {
+  const message = parseErrorMessage(error)
+  $toast.error(message)
+}
+```
+
+## Best Practices
+
+1. **Pure Functions**: Utilities should be pure functions without side effects
+2. **TypeScript**: All utilities should be fully typed
+3. **Single Responsibility**: Each utility file should focus on one domain
+4. **Consistent Naming**: Use camelCase for functions, UPPER_CASE for constants
+5. **Documentation**: Add JSDoc comments for complex utilities
+6. **Testing**: Create unit tests for utility functions
+7. **Performance**: Consider memoization for expensive operations
+
+## File Structure
+```
+src/utils/
+├── index.ts              # Barrel exports
+├── constants.ts          # All application constants
+├── errorParser.ts        # API error parsing
+├── formatCurrency.ts     # Currency formatting
+├── chart.ts             # Chart configurations
+└── schemas.ts           # Schema definitions
+```
+
+These utilities provide a solid foundation for consistent data handling and business logic across the Artemis Panel application.
+
+

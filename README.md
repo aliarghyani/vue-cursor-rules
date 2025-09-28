@@ -126,9 +126,24 @@ cursor .
 ```
 
 ### 3️⃣ **Start Coding! 🎉**
-The rules automatically activate and start helping you write better Vue 3 code. No configuration needed!
+The layered rules system automatically activates:
+- **Core rules**: Always helping with Vue 3 + TypeScript fundamentals
+- **Context rules**: Smart activation based on what you're building
+- **Prevention rules**: Keeping AI suggestions helpful and relevant
 
-> 💡 **Pro Tip**: The rules work best with TypeScript projects. Create a new Vue 3 + TypeScript project with: `npm create vue@latest my-project`
+### 4️⃣ **Optional Enhancements** (When You Need Them)
+```bash
+# Advanced Tailwind patterns
+cp .cursor/rules/optional/tailwind-enhanced.mdc .cursor/rules/
+
+# WCAG accessibility compliance
+cp .cursor/rules/optional/accessibility-wcag.mdc .cursor/rules/
+
+# Performance monitoring patterns
+cp .cursor/rules/optional/performance-monitoring.mdc .cursor/rules/
+```
+
+> 💡 **Pro Tip**: The new layered system starts simple and grows with your needs. Begin with the defaults, then enhance as your project evolves!
 
 ## 💰 Money-Smart Development
 
@@ -146,21 +161,25 @@ The rules automatically activate and start helping you write better Vue 3 code. 
 
 ## 📁 Repository Structure
 
+New **Layered Architecture** for maximum flexibility:
+
 ```
 .cursor/rules/
-├── budget-optimized/     # Cost-effective development patterns
-├── vue3/                # Vue 3 composition patterns & anti-patterns
-├── typescript/          # Advanced TypeScript & type safety
-├── performance/         # Monitoring & optimization
-├── enterprise/          # Error handling & logging
-├── accessibility/       # WCAG 2.1 AA compliance
-├── state/              # Advanced Pinia patterns
-├── net/                # Axios & API integration
-├── i18n/               # Vue I18n patterns
-├── widgets/            # Component libraries
-├── ui-kits/            # UI framework integrations
-├── global/             # Always-on guardrails
-└── meta/               # Rule creation guidelines
+├── core/               # 🎯 Always-on fundamentals
+│   ├── 00-fundamentals.mdc    # Vue 3 + TypeScript essentials
+│   ├── 01-security.mdc        # Security guardrails
+│   └── 02-performance.mdc     # Performance consciousness
+├── context/            # 🧠 Smart activation based on what you're building  
+│   ├── forms.mdc             # Form handling patterns
+│   ├── api-integration.mdc   # HTTP/API patterns
+│   └── components.mdc        # Component architecture
+├── optional/           # ⚡ Enhanced features (opt-in)
+│   ├── tailwind-enhanced.mdc # Advanced Tailwind patterns
+│   ├── accessibility-wcag.mdc # WCAG 2.1 AA compliance
+│   └── testing-patterns.mdc   # Testing strategies
+├── prevention/         # 🛡️ AI mistake prevention
+│   └── ai-common-mistakes.mdc # Better AI suggestions
+└── legacy/             # 📦 Original files (compatibility)
 
 docs/
 ├── HOWTO_Cursor.md     # Cursor integration guide
@@ -171,46 +190,56 @@ scripts/
 ├── lint-rules.mjs      # Rule validation
 └── measure-tokens.mjs  # Token usage analysis
 
-samples/minimal-vue-app/ # Testing playground
+examples/               # Real-world examples
+├── basic-component.vue # Component patterns
+├── form-component.vue  # Form handling
+└── useApi.ts          # API integration
 ```
 
-## 🔍 Rule Categories
+## 🎯 New Layered System
 
-### 🛡️ Always-On Guardrails
-- **Agent discipline**: Token conservation, micro-changes
-- **Architecture decisions**: Framework selection, component design
-- **Performance mindset**: Bundle optimization, memory management
-- **Type safety**: Strict TypeScript, runtime validation
+### 🎯 **Core Layer** (Always Active)
+**What**: Essential patterns that should ALWAYS be followed  
+**Contains**: Vue 3 fundamentals, TypeScript basics, security essentials  
+**Philosophy**: Provide guardrails without restricting creativity
 
-### 🎨 Vue 3 Excellence
-- **Advanced composition patterns**: Factory, dependency injection, state machines
-- **Performance optimization**: Memory management, reactive efficiency
-- **Component architecture**: Presentational vs container separation
-- **Lifecycle management**: Cleanup, resource management
+### 🧠 **Context Layer** (Smart Activation)
+**What**: Activate based on what you're building  
+**Triggers**: File patterns or keywords (forms, API, components)  
+**Contains**: Right information at the right time  
+**Philosophy**: Contextual guidance when you need it
 
-### 🔒 Enterprise Security
-- **XSS prevention**: Template security, input sanitization
-- **CSRF protection**: Token validation, secure headers
-- **Authentication**: JWT handling, session management
-- **Authorization**: Role-based access control (RBAC)
+### ⚡ **Optional Layer** (Choose Your Enhancement)
+**What**: Advanced features you can opt into  
+**Activation**: Copy relevant files when needed  
+**Contains**: Tailwind advanced patterns, WCAG compliance, testing strategies  
+**Philosophy**: Power features without overwhelming beginners
 
-### ♿ Accessibility First
-- **WCAG 2.1 AA compliance**: Semantic HTML, ARIA patterns
-- **Screen reader support**: Live regions, announcements
-- **Keyboard navigation**: Focus management, skip links
-- **Inclusive design**: Color contrast, motion preferences
+### 🛡️ **Prevention Layer** (Always Active)
+**What**: Prevent common AI coding mistakes  
+**Contains**: Over-engineering prevention, framework mixing prevention  
+**Philosophy**: Better AI suggestions, happier developers
 
-### 📊 Performance Monitoring
-- **Core Web Vitals**: LCP, FID, CLS measurement
-- **Bundle analysis**: Code splitting, tree shaking
-- **Memory profiling**: Leak detection, cleanup patterns
-- **Real-time monitoring**: Performance metrics, error tracking
+## 🚀 How to Use
 
-### 🧪 Testing Excellence
-- **Unit testing**: Pure functions, composables
-- **Integration testing**: Component interactions
-- **E2E testing**: User workflows, critical paths
-- **Accessibility testing**: Screen reader simulation
+### 📦 **Default Experience** (Recommended)
+Just clone and use! Core + Prevention layers provide excellent guidance.
+
+### 🎨 **Enhanced Experience** (Optional)
+Want advanced features? Enable them selectively:
+```bash
+# Add advanced Tailwind patterns
+cp .cursor/rules/optional/tailwind-enhanced.mdc .cursor/rules/
+
+# Add WCAG accessibility compliance  
+cp .cursor/rules/optional/accessibility-wcag.mdc .cursor/rules/
+```
+
+### 🔧 **Context Activation**
+Smart rules activate automatically:
+- Working on forms? → Form patterns appear
+- Making API calls? → API integration guidance
+- Building components? → Architecture suggestions
 
 ## 💼 **Who Benefits Most**
 

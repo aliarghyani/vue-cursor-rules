@@ -1,0 +1,27 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: How to register Vue plugins globally
+globs: src/plugins/**/*.ts
+alwaysApply: false
+---
+# Plugin Registration
+
+Centralize plugin configuration in `src/plugins/index.ts`. 
+Use the exported `install` method to register router, store and other plugins with the app instance:
+```typescript
+export default {
+  install(app: App): void {
+    app.use(RouterPlugin)
+    app.use(StorePlugin)
+    app.use(NProgressPlugin)
+    app.use(VuetifyPlugin)
+    // register custom components and directives
+  },
+}
+```
+
+Add plugins by importing them in this file rather than directly in `main.ts`.

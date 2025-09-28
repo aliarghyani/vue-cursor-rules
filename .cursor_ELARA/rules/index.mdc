@@ -1,0 +1,35 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Master index for Cursor rules
+globs:
+alwaysApply: true
+---
+# Artemis Panel - Rule Index
+
+Overview of all active Cursor rules.
+
+## Core & General
+| Rule File | Description |
+| :-- | :-- |
+| @cursor-rules.mdc | How to add or edit Cursor rules |
+| @project-structure.mdc | Project structure and architecture |
+| @environment.mdc | Environment variable guidelines |
+| @naming-conventions.mdc | Naming conventions |
+
+## Development Guidelines
+| Rule File | Description |
+| :-- | :-- |
+| @component-guidelines.mdc | Vue component patterns |
+| @internationalization.mdc | **CRITICAL** - i18n with t() function |
+| @service-patterns.mdc | API service layer |
+| @pinia-store.mdc | Pinia store conventions |
+| @router-conventions.mdc | Vue Router conventions |
+| @plugin-registration.mdc | Registering Vue plugins |
+| @composables.mdc | Creating composables |
+| @utilities.mdc | Utilities and constants |
+| @types.mdc | Type definitions |
+| @cypress-testing.mdc | Cypress testing |

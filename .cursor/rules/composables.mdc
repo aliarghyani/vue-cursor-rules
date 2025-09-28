@@ -1,0 +1,84 @@
+---
+description: Composables patterns and reusable logic
+globs: ["**/composables/**", "**/hooks/**", "**/*.composable.ts", "**/use*.ts"]
+alwaysApply: false
+---
+# Composables
+
+Place composables in `/composables` directory. Use `use` prefix.
+
+## Basic Composable Pattern
+
+```typescript
+// composables/useCounter.ts
+import { ref, computed } from 'vue'
+
+export function useCounter(initialValue = 0) {
+  const count = ref(initialValue)
+  
+  const increment = () => count.value++
+  const decrement = () => count.value--
+  const reset = () => count.value = initialValue
+  
+  const isZero = computed(() => count.value === 0)
+  const isPositive = computed(() => count.value > 0)
+  
+  return {
+    count: readonly(count),
+    increment,
+    decrement,
+    reset,
+    isZero,
+    isPositive
+  }
+}
+```
+
+## API Composable
+
+```typescript
+// composables/useApi.ts
+import { ref } from 'vue'
+
+export function useApi<T>(url: string) {
+  const data = ref<T | null>(null)
+  const loading = ref(false)
+  const error = ref<string | null>(null)
+  
+  const execute = async () => {
+    try {
+      loading.value = true
+      error.value = null
+      
+      const response = await fetch(url)
+      if (!response.ok) throw new Error(response.statusText)
+      
+      data.value = await response.json()
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Unknown error'
+    } finally {
+      loading.value = false
+    }
+  }
+  
+  return { data, loading, error, execute }
+}
+```
+
+## Storage Composable
+
+```typescript
+// composables/useLocalStorage.ts
+import { ref, watch, Ref } from 'vue'
+
+export function useLocalStorage<T>(key: string, defaultValue: T): Ref<T> {
+  const stored = localStorage.getItem(key)
+  const value = ref(stored ? JSON.parse(stored) : defaultValue)
+  
+  watch(value, (newValue) => {
+    localStorage.setItem(key, JSON.stringify(newValue))
+  }, { deep: true })
+  
+  return value
+}
+```

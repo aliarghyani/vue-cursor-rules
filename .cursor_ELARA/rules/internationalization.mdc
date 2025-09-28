@@ -1,0 +1,174 @@
+---
+description: Internationalization rules - only modify en.yml, avoid YAML duplicates
+alwaysApply: false
+---
+# Internationalization Guidelines
+
+## **CRITICAL RULE - ALWAYS ENFORCED**
+
+**NEVER use hardcoded display text in Vue components or templates. ALWAYS use the `t()` function for all user-facing strings.**
+
+## Required Practices
+
+### ✅ **ALWAYS USE t() Function**
+```vue
+<template>
+  <!-- ✅ CORRECT -->
+  <v-btn>{{ t('button.save') }}</v-btn>
+  <p>{{ t('messages.welcome_user', { name: user.name }) }}</p>
+  <span>{{ t('status.pending') }}</span>
+  
+  <!-- ❌ WRONG - Never hardcode -->
+  <v-btn>Save</v-btn>
+  <p>Welcome {{ user.name }}</p>
+  <span>Pending</span>
+</template>
+
+<script setup>
+// ✅ CORRECT
+const { t } = useI18n()
+$toast.success(t('messages.saved_successfully'))
+
+// ❌ WRONG - Never hardcode
+$toast.success('Data saved successfully')
+</script>
+```
+
+### ✅ **ONLY Modify locales/en.yml - NEVER ru.yml or tr.yml**
+When adding new display text:
+
+1. **ONLY add to `locales/en.yml`** - Never modify ru.yml or tr.yml
+2. **Check for existing sections** - Search for existing keys to avoid duplicates
+3. **Use descriptive, hierarchical keys** under existing sections
+4. **Verify YAML structure** - Ensure no duplicate keys exist
+
+```yaml
+# locales/en.yml - ADD to existing sections
+field:
+  label:
+    existing_key: Existing Label
+    new_key: New Label  # Add here, don't create new field: section
+
+button:
+  save: Save
+  cancel: Cancel
+  new_action: New Action  # Add to existing button section
+
+sentences:
+  existing_sentence: Existing sentence
+  new_tooltip: New tooltip text  # Add tooltips here
+```
+
+### ⚠️ **CRITICAL: Avoid Duplicate YAML Keys**
+- **Always search for existing sections** before adding new keys
+- **Add to existing sections** rather than creating new ones
+- **Use proper YAML indentation** to maintain hierarchy
+- **Check for "Map keys must be unique" errors** after modifications
+
+### ✅ **Translation Key Naming Convention**
+```typescript
+// Use dot notation for hierarchy
+t('button.save')           // Simple action buttons
+t('messages.success')      // User feedback messages  
+t('field.label.email')     // Form field labels
+t('header.user_profile')   // Page/section headers
+t('status.active')         // Status indicators
+t('errors.validation')     // Error messages
+t('sentences.help_text')   // Tooltip/informational messages
+```
+
+## Implementation Steps
+
+### When Adding New Display Text:
+
+1. **Search `locales/en.yml`** for existing similar keys and sections
+2. **Add to existing sections** - Don't create duplicate sections
+3. **ONLY modify en.yml** - Never touch ru.yml or tr.yml  
+4. **Use t() function** in components
+5. **Test for YAML errors** - Check console for duplicate key errors
+
+### Example Workflow:
+```typescript
+// 1. Search locales/en.yml for existing 'sentences:' section
+// 2. Add to existing section (don't create new sentences: section):
+//    sentences:
+//      existing_key: Existing sentence
+//      search_iata_code: Click to search IATA codes  # Add here
+// 3. Use in component: {{ t('sentences.search_iata_code') }}
+```
+
+## Prohibited Practices
+
+### ❌ **NEVER Modify ru.yml or tr.yml**
+- **Only English translations** are added by developers
+- **Other languages** are handled separately later
+- **Avoid breaking translation workflow** by modifying non-English files
+
+### ❌ **NEVER Create Duplicate YAML Sections**
+```yaml
+# ❌ WRONG - Creates duplicate keys
+field:
+  label:
+    name: Name
+
+field:  # DUPLICATE KEY ERROR!
+  label:
+    email: Email
+
+# ✅ CORRECT - Single section
+field:
+  label:
+    name: Name
+    email: Email
+```
+
+### ❌ **NEVER Use Hardcoded Strings**
+```vue
+<!-- ❌ PROHIBITED -->
+<template>
+  <div>Welcome to our application</div>
+  <v-btn>Click here</v-btn>
+  <span class="badge">New</span>
+</template>
+
+<script>
+// ❌ PROHIBITED  
+const message = 'Operation completed'
+$toast.error('Something went wrong')
+console.log('User logged in') // Even logs should be translatable for user-facing messages
+</script>
+```
+
+### ❌ **NEVER Skip Translation for "Simple" Text**
+```vue
+<!-- ❌ WRONG - Even simple text must be translated -->
+<span>Yes</span>
+<span>No</span>
+<span>OK</span>
+<div>Loading...</div>
+
+<!-- ✅ CORRECT -->
+<span>{{ t('common.yes') }}</span>
+<span>{{ t('common.no') }}</span>
+<span>{{ t('common.ok') }}</span>
+<div>{{ t('common.loading') }}</div>
+```
+
+## Enforcement
+
+- **Code reviews MUST reject** any hardcoded display strings
+- **Linting rules** should flag hardcoded strings in templates
+- **All user-facing text** must go through the translation system
+- **No exceptions** - even for English-only applications
+- **YAML structure** must be validated to prevent duplicate keys
+
+## Benefits
+
+- **No YAML parsing errors** - Proper key management
+- **Clean translation workflow** - Only en.yml modifications
+- **Future multilingual support** - Structured for easy translation
+- **Consistent terminology** - Centralized text management
+- **Dynamic text updates** - Change text without code changes
+- **Accessibility** - Better screen reader support
+- **Maintainability** - Single source of truth for English text
+

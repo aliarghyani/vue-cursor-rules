@@ -1,0 +1,178 @@
+---
+description: Tailwind CSS patterns and best practices for Vue 3
+globs: ["**/*.vue", "**/*.css", "**/tailwind.config.*"]
+alwaysApply: false
+---
+# Tailwind CSS Integration
+
+## Component Styling Patterns
+
+```vue
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+
+interface Props {
+  variant?: 'primary' | 'secondary' | 'danger'
+  size?: 'sm' | 'md' | 'lg'
+  disabled?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  variant: 'primary',
+  size: 'md',
+  disabled: false
+})
+
+const buttonClasses = computed(() => [
+  // Base classes
+  'inline-flex items-center justify-center font-medium transition-colors',
+  'focus:outline-none focus:ring-2 focus:ring-offset-2',
+  'disabled:opacity-50 disabled:cursor-not-allowed',
+  
+  // Size variants
+  {
+    'px-3 py-1.5 text-sm': props.size === 'sm',
+    'px-4 py-2 text-base': props.size === 'md',
+    'px-6 py-3 text-lg': props.size === 'lg',
+  },
+  
+  // Color variants
+  {
+    'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500': 
+      props.variant === 'primary',
+    'bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500': 
+      props.variant === 'secondary',
+    'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500': 
+      props.variant === 'danger',
+  }
+])
+</script>
+
+<template>
+  <button 
+    :class="buttonClasses"
+    :disabled="disabled"
+  >
+    <slot />
+  </button>
+</template>
+```
+
+## Responsive Design Patterns
+
+```vue
+<template>
+  <!-- Mobile-first responsive grid -->
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div 
+      v-for="item in items" 
+      :key="item.id"
+      class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow"
+    >
+      <!-- Card content -->
+    </div>
+  </div>
+
+  <!-- Responsive typography -->
+  <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
+    Responsive Heading
+  </h1>
+
+  <!-- Responsive spacing -->
+  <section class="px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+    <!-- Section content -->
+  </section>
+</template>
+```
+
+## Dark Mode Support
+
+```vue
+<template>
+  <!-- Component with dark mode variants -->
+  <div class="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+    <div class="border border-gray-200 dark:border-gray-700">
+      <p class="text-gray-600 dark:text-gray-400">
+        Content that adapts to dark mode
+      </p>
+    </div>
+  </div>
+</template>
+```
+
+## Form Styling
+
+```vue
+<template>
+  <form class="space-y-6">
+    <!-- Input field -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        Email
+      </label>
+      <input
+        type="email"
+        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+               focus:border-blue-500 focus:ring-blue-500
+               dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+      />
+    </div>
+
+    <!-- Error state -->
+    <div v-if="hasError">
+      <input
+        class="mt-1 block w-full rounded-md border-red-300 shadow-sm
+               focus:border-red-500 focus:ring-red-500"
+      />
+      <p class="mt-1 text-sm text-red-600">Error message</p>
+    </div>
+  </form>
+</template>
+```
+
+## Animation and Transitions
+
+```vue
+<template>
+  <!-- Loading spinner -->
+  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+
+  <!-- Hover animations -->
+  <button class="transform hover:scale-105 transition-transform duration-200">
+    Hover me
+  </button>
+
+  <!-- Fade in animation -->
+  <div class="opacity-0 animate-fadeIn">
+    Content with fade-in effect
+  </div>
+</template>
+
+<style>
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-in-out forwards;
+}
+</style>
+```
+
+## Utility-First Best Practices
+
+- Use `@apply` sparingly, prefer utility classes
+- Group related utilities together
+- Use responsive prefixes consistently
+- Leverage CSS custom properties for dynamic values
+- Extract complex component styles to separate classes
+
+```css
+/* tailwind.config.js custom utilities */
+@layer utilities {
+  .text-shadow {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}
+```

@@ -1,0 +1,88 @@
+---
+alwaysApply: false
+---
+---
+description: Vuetify VBtn navigation pattern - use to prop instead of click handlers
+globs: src/**/*.vue
+alwaysApply: true
+---
+
+# Vuetify VBtn Navigation Pattern
+
+## Rule: Use `to` Prop Instead of Click Handlers for Navigation
+
+For Vuetify `v-btn` components that navigate to other pages and should open in new tabs, use the built-in `to` prop with `target="_blank"` and `rel="noopener"` instead of custom click handlers.
+
+## ✅ Correct Pattern
+
+```vue
+<template>
+  <!-- Navigation button with to prop -->
+  <v-btn
+    :to="{ name: ROUTES_NAME.LEAD }"
+    target="_blank"
+    rel="noopener"
+    color="primary"
+    variant="outlined"
+  >
+    {{ t("all_leads") }}
+  </v-btn>
+  
+  <!-- With route params -->
+  <v-btn
+    :to="{ name: ROUTES_NAME.DETAIL, params: { id: itemId } }"
+    target="_blank"
+    rel="noopener"
+  >
+    View Details
+  </v-btn>
+</template>
+
+<script setup>
+// No navigation methods needed!
+</script>
+```
+
+## ❌ Incorrect Pattern
+
+```vue
+<template>
+  <!-- Don't use click handlers for simple navigation -->
+  <v-btn @click="navigateToLeads">
+    All Leads
+  </v-btn>
+</template>
+
+<script setup>
+// Avoid these unnecessary methods
+const router = useRouter()
+
+const navigateToLeads = () => {
+  const routeData = router.resolve({ name: ROUTES_NAME.LEAD })
+  window.open(routeData.href, "_blank")
+}
+</script>
+```
+
+## Required Attributes for New Tab Navigation
+
+1. **`:to`** - The route object or string
+2. **`target="_blank"`** - Opens in new tab
+3. **`rel="noopener"`** - Security best practice for new tabs
+
+## When to Use Click Handlers
+
+Only use click handlers when you need:
+- Complex logic before navigation
+- Dynamic route resolution with complex parameters
+- Non-route navigation (external URLs)
+- Custom behavior beyond simple navigation
+
+## Benefits
+
+- **Cleaner Code**: Eliminates unnecessary router methods
+- **More Declarative**: Navigation intent is clear in template
+- **Standard Vuetify**: Uses built-in Vuetify functionality
+- **Better Performance**: No extra method calls
+- **Security**: `rel="noopener"` prevents security issues
+

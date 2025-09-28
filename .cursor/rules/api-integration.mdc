@@ -1,0 +1,121 @@
+---
+description: API integration patterns and data fetching
+globs: ["**/api/**", "**/*.api.ts", "**/services/**"]
+alwaysApply: false
+---
+# API Integration
+
+## API Service Pattern
+
+```typescript
+// services/api.ts
+const API_BASE = import.meta.env.VITE_API_URL
+
+class ApiService {
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const url = `${API_BASE}${endpoint}`
+    
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    })
+    
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.statusText}`)
+    }
+    
+    return response.json()
+  }
+  
+  get<T>(endpoint: string) {
+    return this.request<T>(endpoint)
+  }
+  
+  post<T>(endpoint: string, data: unknown) {
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+  
+  put<T>(endpoint: string, data: unknown) {
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+  
+  delete<T>(endpoint: string) {
+    return this.request<T>(endpoint, {
+      method: 'DELETE',
+    })
+  }
+}
+
+export const api = new ApiService()
+```
+
+## Data Fetching Composable
+
+```typescript
+// composables/useFetch.ts
+import { ref, onMounted } from 'vue'
+
+export function useFetch<T>(url: string, immediate = true) {
+  const data = ref<T | null>(null)
+  const loading = ref(false)
+  const error = ref<string | null>(null)
+  
+  const execute = async () => {
+    try {
+      loading.value = true
+      error.value = null
+      data.value = await api.get<T>(url)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Unknown error'
+    } finally {
+      loading.value = false
+    }
+  }
+  
+  if (immediate) {
+    onMounted(execute)
+  }
+  
+  return { data, loading, error, execute }
+}
+```
+
+## Usage in Components
+
+```vue
+<script setup lang="ts">
+import { useFetch } from '@/composables/useFetch'
+
+interface User {
+  id: number
+  name: string
+  email: string
+}
+
+const { data: users, loading, error } = useFetch<User[]>('/users')
+</script>
+
+<template>
+  <div>
+    <div v-if="loading">Loading users...</div>
+    <div v-else-if="error">Error: {{ error }}</div>
+    <ul v-else-if="users">
+      <li v-for="user in users" :key="user.id">
+        {{ user.name }} - {{ user.email }}
+      </li>
+    </ul>
+  </div>
+</template>
+```

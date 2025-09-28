@@ -1,0 +1,98 @@
+---
+description: Component testing with Vitest and Vue Test Utils
+globs: ["**/*.test.ts", "**/*.spec.ts", "**/tests/**"]
+alwaysApply: false
+---
+# Component Testing
+
+## Test Setup
+
+```typescript
+// tests/setup.ts
+import { beforeEach } from 'vitest'
+import { config } from '@vue/test-utils'
+
+config.global.plugins = [/* your plugins */]
+
+beforeEach(() => {
+  // Reset mocks
+  vi.clearAllMocks()
+})
+```
+
+## Basic Component Test
+
+```typescript
+// components/Counter.test.ts
+import { mount } from '@vue/test-utils'
+import { describe, it, expect } from 'vitest'
+import Counter from '@/components/Counter.vue'
+
+describe('Counter', () => {
+  it('renders initial count', () => {
+    const wrapper = mount(Counter, {
+      props: { initialCount: 5 }
+    })
+    
+    expect(wrapper.text()).toContain('5')
+  })
+  
+  it('increments count on button click', async () => {
+    const wrapper = mount(Counter)
+    
+    await wrapper.find('button').trigger('click')
+    
+    expect(wrapper.text()).toContain('1')
+  })
+  
+  it('emits update event', async () => {
+    const wrapper = mount(Counter)
+    
+    await wrapper.find('button').trigger('click')
+    
+    expect(wrapper.emitted()).toHaveProperty('update')
+    expect(wrapper.emitted('update')?.[0]).toEqual([1])
+  })
+})
+```
+
+## Testing Composables
+
+```typescript
+// composables/useCounter.test.ts
+import { describe, it, expect } from 'vitest'
+import { useCounter } from '@/composables/useCounter'
+
+describe('useCounter', () => {
+  it('initializes with default value', () => {
+    const { count } = useCounter()
+    expect(count.value).toBe(0)
+  })
+  
+  it('increments count', () => {
+    const { count, increment } = useCounter()
+    
+    increment()
+    
+    expect(count.value).toBe(1)
+  })
+})
+```
+
+## Mock External Dependencies
+
+```typescript
+// Mock API calls
+vi.mock('@/api/users', () => ({
+  getUsers: vi.fn(() => Promise.resolve([]))
+}))
+
+// Mock router
+const mockRouter = {
+  push: vi.fn()
+}
+
+vi.mock('vue-router', () => ({
+  useRouter: () => mockRouter
+}))
+```

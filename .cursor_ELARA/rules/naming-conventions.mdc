@@ -1,0 +1,41 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: File and naming conventions
+globs: '**/*'
+alwaysApply: false
+---
+# Naming Conventions
+
+## Vue Components
+- **Component files**: PascalCase with capital first letter (`UserProfile.vue`, `Index.vue`, `Login.vue`)
+- **Component names**: PascalCase (`UserProfile`, `LoginForm`, `DashboardWidget`)
+
+## Other Files
+- **Services**: kebab-case with `.service.ts` (`user.service.ts`, `report.service.ts`)
+- **Stores**: kebab-case with `.store.ts` (`auth.store.ts`, `app.store.ts`)
+- **Types**: kebab-case with `.types.ts` or `.d.ts` (`user.types.ts`, `app.d.ts`)
+- **Utils and other modules**: descriptive kebab-case (`constants.ts`, `error-parser.ts`)
+
+## Critical Rule: Vue Component File Names
+**All Vue component files MUST start with a capital letter.**
+
+✅ **Correct:**
+- `Index.vue`
+- `Login.vue` 
+- `UserProfile.vue`
+- `DashboardWidget.vue`
+
+❌ **Incorrect:**
+- `index.vue` (will cause production build failures)
+- `login.vue` (will cause production build failures)
+- `userProfile.vue` (inconsistent casing)
+
+## Rationale
+- Production builds on Linux are case-sensitive
+- Development on Windows/Mac may not catch case mismatches
+- Consistent casing prevents runtime import errors
+- Follows Vue.js community standards

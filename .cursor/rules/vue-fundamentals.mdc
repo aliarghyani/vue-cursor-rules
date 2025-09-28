@@ -16,6 +16,8 @@ alwaysApply: true
 
 **Chain-of-Thought:** Think step-by-step: 1. Analyze component needs 2. Define props/emits interface 3. Plan reactive state 4. Implement logic
 
+**Note:** These patterns are UI-framework neutral; adapt templates for kits like Vuetify/Quasar while preserving composition logic.
+
 ## Workflow Chain: Build a Reactive Component
 
 **Full Task:** Create a counter component with props and events.
@@ -135,3 +137,31 @@ const isLoggedIn = computed(() => !!user.value)
 // Avoid
 const state = reactive({ user: null, isLoggedIn: false })
 ```
+
+## UI Kit Adaptations
+
+**Core composition logic stays identical across all UI frameworks:**
+
+- **Tailwind UI:** Use utility classes with semantic HTML
+  ```vue
+  <button @click="increment" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+    Increment
+  </button>
+  ```
+
+- **Vuetify:** Replace with Material components
+  ```vue
+  <v-btn @click="increment" color="primary">Increment</v-btn>
+  ```
+
+- **Quasar:** Use mobile-optimized components
+  ```vue
+  <q-btn @click="increment" color="primary" label="Increment" />
+  ```
+
+- **Element Plus:** Leverage rich component library
+  ```vue
+  <el-button @click="increment" type="primary">Increment</el-button>
+  ```
+
+*Key principle: Reactivity (`ref`, `computed`, `watch`) and composition patterns remain unchanged—only template syntax adapts. See ui-kits-guide.mdc for comprehensive integration patterns.*

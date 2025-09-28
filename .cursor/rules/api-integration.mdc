@@ -16,6 +16,8 @@ alwaysApply: false
 
 **Chain-of-Thought:** Think step-by-step: 1. Design API interface 2. Create typed service 3. Build composable wrapper 4. Integrate with component
 
+**Note:** These patterns are UI-framework neutral; adapt UI components while preserving data fetching logic.
+
 ## Workflow Chain: Build API Integration
 
 **Full Task:** Create a user list with API fetching and error handling.
@@ -57,6 +59,46 @@ const { users, loading, error, refetch } = useUsers()
   </div>
 </template>
 ```
+
+## UI Kit Adaptations
+
+**Data fetching composables remain identical—only loading/error UI changes:**
+
+- **Tailwind UI:** Custom loading states with utilities
+  ```vue
+  <div v-if="loading" class="flex items-center justify-center p-4">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+  </div>
+  <div v-else-if="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+    {{ error }}
+  </div>
+  ```
+
+- **Vuetify:** Material progress and alerts
+  ```vue
+  <v-progress-circular v-if="loading" indeterminate color="primary" />
+  <v-alert v-else-if="error" type="error">{{ error }}</v-alert>
+  <v-list v-else>
+    <v-list-item v-for="user in users" :key="user.id">{{ user.name }}</v-list-item>
+  </v-list>
+  ```
+
+- **Quasar:** Mobile-friendly loading and notifications
+  ```vue
+  <q-spinner v-if="loading" color="primary" size="3em" />
+  <q-banner v-else-if="error" class="text-white bg-red">{{ error }}</q-banner>
+  ```
+
+- **Element Plus:** Rich data display components
+  ```vue
+  <el-loading v-if="loading" />
+  <el-alert v-else-if="error" type="error">{{ error }}</el-alert>
+  <el-table v-else :data="users">
+    <el-table-column prop="name" label="Name" />
+  </el-table>
+  ```
+
+*Remember: `useFetch` composable and API service logic stay identical across all frameworks. See ui-kits-guide.mdc for complete patterns.*
 
 ## API Service Pattern
 

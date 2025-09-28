@@ -16,6 +16,8 @@ alwaysApply: false
 
 **Chain-of-Thought:** Think step-by-step: 1. Plan component variants 2. Create computed class objects 3. Apply responsive patterns 4. Add dark mode support
 
+**Note:** Tailwind works alongside any UI kit—use for custom styling or as the primary framework. Compatible with Headless UI for accessible components.
+
 ## Component Styling Patterns
 
 ```vue

@@ -16,6 +16,8 @@ alwaysApply: false
 
 **Chain-of-Thought:** Think step-by-step: 1. Define form schema 2. Setup reactive state 3. Add validation rules 4. Handle submission
 
+**Note:** These patterns are UI-framework neutral; adapt templates for kits like Vuetify/Quasar while preserving composable logic.
+
 ## Basic Form Pattern
 
 ```vue
@@ -100,3 +102,29 @@ const handleSubmit = async () => {
   </form>
 </template>
 ```
+
+## UI Kit Adaptations
+
+**If using a UI kit, adapt the template while keeping composable logic:**
+
+- **Tailwind UI/Headless UI:** Use utility classes with native inputs
+  ```vue
+  <input v-model="form.email" class="block w-full rounded-md border-gray-300 focus:ring-blue-500" />
+  ```
+
+- **Vuetify:** Replace with Material components
+  ```vue
+  <v-text-field v-model="form.email" label="Email" :error-messages="errors.email" />
+  ```
+
+- **Quasar:** Use mobile-friendly components
+  ```vue
+  <q-input v-model="form.email" label="Email" :error="!!errors.email" :error-message="errors.email" />
+  ```
+
+- **Element Plus:** Leverage rich form components
+  ```vue
+  <el-input v-model="form.email" placeholder="Email" :class="{ 'is-error': errors.email }" />
+  ```
+
+*Tip: Validation logic and state management remain identical—only template syntax changes. See ui-kits-guide.mdc for detailed patterns.*

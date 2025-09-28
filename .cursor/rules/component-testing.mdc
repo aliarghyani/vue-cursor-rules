@@ -16,6 +16,8 @@ alwaysApply: false
 
 **Chain-of-Thought:** Think step-by-step: 1. Identify what to test 2. Setup component with props 3. Simulate user actions 4. Assert expected outcomes
 
+**Note:** Testing patterns are UI-framework neutral; adapt selectors and mocks for specific UI kits while preserving test logic.
+
 ## Test Setup
 
 ```typescript
@@ -107,3 +109,40 @@ vi.mock('vue-router', () => ({
   useRouter: () => mockRouter
 }))
 ```
+
+## UI Kit Testing Adaptations
+
+**Core testing logic remains identical—adapt selectors and setup for specific UI libraries:**
+
+- **Tailwind UI/Native Elements:** Standard CSS selectors
+  ```typescript
+  await wrapper.find('button').trigger('click')
+  expect(wrapper.find('.text-red-600')).toBeTruthy() // Error state
+  ```
+
+- **Vuetify:** Component-specific selectors and global setup
+  ```typescript
+  // vitest.config.ts
+  config.global.plugins = [vuetify]
+  
+  // Test
+  await wrapper.findComponent({ name: 'VBtn' }).trigger('click')
+  expect(wrapper.findComponent({ name: 'VAlert' }).exists()).toBe(true)
+  ```
+
+- **Quasar:** Configure Quasar testing utilities
+  ```typescript
+  import { installQuasarPlugin } from '@quasar/quasar-app-extension-testing-unit-vitest'
+  installQuasarPlugin()
+  
+  await wrapper.findComponent({ name: 'QBtn' }).trigger('click')
+  ```
+
+- **Element Plus:** Setup Element Plus globally
+  ```typescript
+  config.global.plugins = [ElementPlus]
+  
+  await wrapper.findComponent({ name: 'ElButton' }).trigger('click')
+  ```
+
+*Essential: Test component behavior and user interactions, not UI kit implementation details. Composable and business logic tests remain framework-agnostic.*

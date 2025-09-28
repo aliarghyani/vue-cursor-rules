@@ -1,0 +1,101 @@
+---
+description: UI kit integration guide for popular Vue 3 frameworks
+globs: ["**/*.vue", "**/*.ts"]
+alwaysApply: false
+---
+# UI Kits Guide
+
+**Role:** You are a Vue 3 expert specializing in UI framework integration and component adaptation.
+
+**Core Rules:**
+- Keep core Vue patterns UI-framework neutral
+- Adapt templates while preserving composable logic
+- Choose kits based on project needs and design system
+- Maintain TypeScript support across all integrations
+- Use native Vue reactivity regardless of UI kit
+
+**Chain-of-Thought:** Think step-by-step: 1. Choose appropriate UI kit 2. Apply core Vue rule 3. Adapt template syntax 4. Preserve reactivity patterns
+
+## Popular UI Kit Compatibility
+
+| Kit | Best For | Strengths | Integration Focus |
+|-----|----------|-----------|-------------------|
+| **Tailwind UI/Headless UI** | Custom designs | Full control, accessibility | Utility classes + composables |
+| **Vuetify** | Material Design | Complete ecosystem | Component replacement |
+| **Quasar** | Cross-platform | Mobile-first, PWA | Universal components |
+| **Element Plus** | Enterprise/Admin | Rich components | Form-heavy apps |
+
+## Integration Patterns
+
+### Generic Composable (Kit-Agnostic)
+```typescript
+// composables/useFormValidation.ts - Works with any UI kit
+export function useFormValidation<T>(initialValues: T) {
+  const values = ref(initialValues)
+  const errors = ref<Record<string, string>>({})
+  
+  // Core logic stays the same regardless of UI kit
+  const validate = () => {
+    // Validation logic here
+  }
+  
+  return { values, errors, validate }
+}
+```
+
+### Tailwind UI Adaptation
+```vue
+<script setup lang="ts">
+import { useFormValidation } from '@/composables/useFormValidation'
+
+const { values, errors, validate } = useFormValidation({ email: '' })
+</script>
+
+<template>
+  <input 
+    v-model="values.email"
+    class="block w-full rounded-md border-gray-300 focus:border-blue-500"
+    :class="{ 'border-red-300': errors.email }"
+  />
+</template>
+```
+
+### Vuetify Adaptation
+```vue
+<script setup lang="ts">
+// Same composable logic
+const { values, errors, validate } = useFormValidation({ email: '' })
+</script>
+
+<template>
+  <v-text-field
+    v-model="values.email"
+    label="Email"
+    :error-messages="errors.email"
+  />
+</template>
+```
+
+## Kit Selection Guide
+
+**For Custom Designs:** Tailwind UI + Headless UI
+- Full design control
+- Excellent accessibility
+- Works with any design system
+
+**For Material Design:** Vuetify
+- Complete Material components
+- Strong TypeScript support
+- Large ecosystem
+
+**For Cross-Platform:** Quasar
+- Mobile, desktop, web
+- Built-in PWA support
+- Excellent performance
+
+**For Enterprise/Admin:** Element Plus
+- Rich component library
+- Table/form-heavy apps
+- Good documentation
+
+*Remember: Core Vue patterns (composables, stores, routing) remain identical across all kits.*

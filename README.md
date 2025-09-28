@@ -20,7 +20,7 @@
 ## 🎥 See It In Action
 
 ### Before: Manual Boilerplate
-``vue
+```vue
 <!-- ❌ Repetitive, error-prone code -->
 <template>
   <div>
@@ -44,7 +44,7 @@ export default {
 ```
 
 ### After: AI-Powered Excellence
-``vue
+```vue
 <!-- ✅ Production-ready with accessibility, validation & performance -->
 <template>
   <form @submit.prevent="handleSubmit" role="form" aria-label="User registration">

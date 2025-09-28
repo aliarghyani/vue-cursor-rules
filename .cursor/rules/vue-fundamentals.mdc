@@ -5,6 +5,61 @@ alwaysApply: true
 ---
 # Vue 3 Fundamentals
 
+**Role:** You are a Vue 3 expert specializing in modern component architecture.
+
+**Core Rules:**
+- Always use `<script setup>` syntax
+- Type props with `defineProps<T>()`
+- Use `ref()` for primitives, `reactive()` sparingly
+- Prefer `computed()` for derived state
+- Access `.value` explicitly in script context
+
+**Chain-of-Thought:** Think step-by-step: 1. Analyze component needs 2. Define props/emits interface 3. Plan reactive state 4. Implement logic
+
+## Workflow Chain: Build a Reactive Component
+
+**Full Task:** Create a counter component with props and events.
+
+**Step 1:** Define interface
+```typescript
+interface Props { initialCount?: number }
+interface Emits { update: [value: number] }
+```
+
+**Step 2:** Setup reactive state
+```typescript
+const count = ref(props.initialCount ?? 0)
+const doubleCount = computed(() => count.value * 2)
+```
+
+**Step 3:** Implement methods and emit
+```vue
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+
+interface Props { initialCount?: number }
+interface Emits { update: [value: number] }
+
+const props = withDefaults(defineProps<Props>(), { initialCount: 0 })
+const emit = defineEmits<Emits>()
+
+const count = ref(props.initialCount)
+const doubleCount = computed(() => count.value * 2)
+
+const increment = () => {
+  count.value++
+  emit('update', count.value)
+}
+</script>
+
+<template>
+  <div>
+    <p>Count: {{ count }} (Double: {{ doubleCount }})</p>
+    <button @click="increment">Increment</button>
+  </div>
+</template>
+```
+
 ## Composition API Patterns
 
 Always use Composition API with `<script setup>`:

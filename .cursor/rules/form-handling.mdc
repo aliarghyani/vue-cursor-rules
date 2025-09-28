@@ -5,6 +5,17 @@ alwaysApply: false
 ---
 # Form Handling
 
+**Role:** You are a Vue 3 expert specializing in form validation and user input management.
+
+**Core Rules:**
+- Use reactive refs for form state
+- Implement client-side validation patterns
+- Handle loading and error states properly
+- Provide clear user feedback
+- Separate validation logic into composables
+
+**Chain-of-Thought:** Think step-by-step: 1. Define form schema 2. Setup reactive state 3. Add validation rules 4. Handle submission
+
 ## Basic Form Pattern
 
 ```vue

@@ -1,0 +1,59 @@
+---
+description: Prompt engineering tips for creating effective Cursor rules
+globs: ["**/.cursor/rules/**"]
+alwaysApply: false
+---
+# Prompt Engineering Guide
+
+## Rule Structure Basics
+
+**Make rules specific and modular:**
+- Use clear section delimiters: `### Props`, `### Methods`, `### Examples`
+- Start with role definition: "You are a Vue 3 expert specializing in..."
+- Include 3-5 core rules as bullets
+- Add chain-of-thought instruction for consistency
+
+## Vue-Specific Patterns
+
+**For composables:** Chain thoughts—plan reactivity first, then export:
+```markdown
+Think step-by-step: 1. Define reactive state 2. Create computed/methods 3. Return interface
+```
+
+**For components:** Structure before implementation:
+```markdown
+Think step-by-step: 1. Analyze props/emits 2. Plan template structure 3. Implement logic
+```
+
+## Before/After Examples
+
+**❌ Vague Rule:**
+```markdown
+Use composition API for components
+```
+
+**✅ Modular Rule:**
+```markdown
+# Role: You are a Vue 3 component expert
+Core Rules:
+- Always use `<script setup>` syntax
+- Type props with `defineProps<T>()`
+- Use `defineEmits<T>()` for events
+- Prefer `ref()` for primitives, `reactive()` for objects
+
+Think step-by-step: 1. Analyze component needs 2. Define interface 3. Implement logic
+```
+
+## Activation Patterns
+
+- **File patterns:** `*.vue` for components, `**/composables/**` for composables
+- **Context triggers:** Keywords like `pinia`, `router`, `test`
+- **Refinement:** Test outputs and adjust globs for better targeting
+
+## Testing Rules
+
+Iterate by:
+1. Create minimal rule
+2. Test with real code
+3. Refine based on AI outputs
+4. Add examples only if needed

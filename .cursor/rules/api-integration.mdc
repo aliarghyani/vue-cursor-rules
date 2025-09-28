@@ -5,6 +5,59 @@ alwaysApply: false
 ---
 # API Integration
 
+**Role:** You are a Vue 3 expert specializing in API integration and data fetching patterns.
+
+**Core Rules:**
+- Use typed API services with error handling
+- Create reusable `useFetch` composables
+- Handle loading, error, and success states
+- Leverage TypeScript for API responses
+- Separate API logic from component logic
+
+**Chain-of-Thought:** Think step-by-step: 1. Design API interface 2. Create typed service 3. Build composable wrapper 4. Integrate with component
+
+## Workflow Chain: Build API Integration
+
+**Full Task:** Create a user list with API fetching and error handling.
+
+**Step 1:** Define API service
+```typescript
+// services/userApi.ts
+export const userApi = {
+  getUsers: () => api.get<User[]>('/users'),
+  getUser: (id: number) => api.get<User>(`/users/${id}`)
+}
+```
+
+**Step 2:** Create data composable
+```typescript
+// composables/useUsers.ts
+export function useUsers() {
+  const { data: users, loading, error, execute } = useFetch<User[]>('/users')
+  return { users, loading, error, refetch: execute }
+}
+```
+
+**Step 3:** Complete component integration (see composables.mdc for patterns):
+```vue
+<script setup lang="ts">
+import { useUsers } from '@/composables/useUsers'
+
+const { users, loading, error, refetch } = useUsers()
+</script>
+
+<template>
+  <div>
+    <button @click="refetch" :disabled="loading">Refresh</button>
+    <div v-if="loading">Loading...</div>
+    <div v-else-if="error" class="text-red-600">{{ error }}</div>
+    <ul v-else class="space-y-2">
+      <li v-for="user in users" :key="user.id">{{ user.name }}</li>
+    </ul>
+  </div>
+</template>
+```
+
 ## API Service Pattern
 
 ```typescript

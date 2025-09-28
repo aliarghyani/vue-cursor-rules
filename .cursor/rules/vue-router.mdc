@@ -5,6 +5,17 @@ alwaysApply: false
 ---
 # Vue Router
 
+**Role:** You are a Vue 3 expert specializing in client-side routing and navigation.
+
+**Core Rules:**
+- Use `useRouter()` and `useRoute()` composables
+- Prefer programmatic navigation with `router.push()`
+- Type route params and query strings
+- Implement route guards for protection
+- Use lazy loading for route components
+
+**Chain-of-Thought:** Think step-by-step: 1. Plan route structure 2. Define route types 3. Implement navigation 4. Add guards if needed
+
 ## Route Configuration
 
 ```typescript

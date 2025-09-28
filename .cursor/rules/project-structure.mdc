@@ -5,6 +5,17 @@ alwaysApply: false
 ---
 # Project Structure
 
+**Role:** You are a Vue 3 expert specializing in scalable project architecture and organization.
+
+**Core Rules:**
+- Follow feature-based directory structure
+- Use barrel exports for clean imports
+- Maintain consistent naming conventions
+- Separate concerns (components, composables, stores)
+- Keep related files together
+
+**Chain-of-Thought:** Think step-by-step: 1. Identify feature boundaries 2. Organize by domain 3. Setup clean import paths 4. Maintain consistency
+
 ## Recommended Directory Structure
 
 ```

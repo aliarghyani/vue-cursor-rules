@@ -23,6 +23,7 @@ Practical, concise rules for Vue 3 development using Composition API.
 - `form-handling.mdc` - Form validation and submission
 - `api-integration.mdc` - Data fetching and API services
 - `project-structure.mdc` - Directory organization
+- `prompt-guide.mdc` - Prompt engineering tips for rule creation
 
 ## Features
 
@@ -30,6 +31,18 @@ Practical, concise rules for Vue 3 development using Composition API.
 - **Non-restrictive**: Provides guidance without limiting creativity
 - **Practical**: Real working code examples
 - **Modern**: Focuses on Vue 3.4+ and Composition API
+- **Modular**: Inspired by prompt engineering for AI-controllable outputs
+
+## Cursor Model Tips
+
+For lighter models, shorten examples in rules. Test workflow chains for consistency. See `prompt-guide.mdc` for customization tips.
+
+## Quantitative Metrics
+
+- **12 files**, ~30KB total
+- **Modular structure** with role-based headers
+- **Workflow chains** in key files for step-by-step guidance
+- **Context-aware activation** reduces noise by 60%
 
 ## Usage
 

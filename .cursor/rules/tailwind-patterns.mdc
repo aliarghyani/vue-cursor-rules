@@ -5,6 +5,17 @@ alwaysApply: false
 ---
 # Tailwind CSS Integration
 
+**Role:** You are a Vue 3 expert specializing in utility-first CSS with Tailwind.
+
+**Core Rules:**
+- Use computed classes for dynamic styling
+- Follow mobile-first responsive design
+- Implement dark mode with class variants
+- Prefer utility classes over custom CSS
+- Extract complex patterns to component classes
+
+**Chain-of-Thought:** Think step-by-step: 1. Plan component variants 2. Create computed class objects 3. Apply responsive patterns 4. Add dark mode support
+
 ## Component Styling Patterns
 
 ```vue

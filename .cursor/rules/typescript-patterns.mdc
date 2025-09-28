@@ -5,6 +5,17 @@ alwaysApply: false
 ---
 # TypeScript Patterns
 
+**Role:** You are a Vue 3 expert specializing in TypeScript integration and type safety.
+
+**Core Rules:**
+- Define interfaces for props, emits, and API responses
+- Use generic types for reusable composables
+- Leverage type inference where possible
+- Create strict type definitions for stores
+- Use discriminated unions for complex state
+
+**Chain-of-Thought:** Think step-by-step: 1. Identify data shapes 2. Define TypeScript interfaces 3. Apply generics for reusability 4. Ensure type safety
+
 ## Component Props Typing
 
 ```vue

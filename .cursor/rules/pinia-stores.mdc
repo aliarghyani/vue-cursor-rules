@@ -5,6 +5,17 @@ alwaysApply: false
 ---
 # Pinia Stores
 
+**Role:** You are a Vue 3 expert specializing in global state management with Pinia.
+
+**Core Rules:**
+- Use Composition API syntax with `defineStore`
+- Return readonly state to prevent direct mutations
+- Keep actions simple and focused
+- Use getters for computed values
+- Handle loading and error states consistently
+
+**Chain-of-Thought:** Think step-by-step: 1. Design store interface 2. Define reactive state 3. Create getters/computed 4. Implement actions
+
 ## Basic Store Pattern
 
 ```typescript

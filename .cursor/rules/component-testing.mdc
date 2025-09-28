@@ -5,6 +5,17 @@ alwaysApply: false
 ---
 # Component Testing
 
+**Role:** You are a Vue 3 expert specializing in component testing and quality assurance.
+
+**Core Rules:**
+- Use Vitest with Vue Test Utils for component tests
+- Test behavior, not implementation details
+- Mock external dependencies properly
+- Test props, events, and user interactions
+- Keep tests focused and readable
+
+**Chain-of-Thought:** Think step-by-step: 1. Identify what to test 2. Setup component with props 3. Simulate user actions 4. Assert expected outcomes
+
 ## Test Setup
 
 ```typescript

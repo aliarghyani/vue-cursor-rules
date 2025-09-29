@@ -25,6 +25,16 @@ alwaysApply: false
 | **Quasar** | Cross-platform | Mobile-first, PWA | Universal components |
 | **Element Plus** | Enterprise/Admin | Rich components | Form-heavy apps |
 
+## Common Primitives (quick map)
+
+| Primitive | Tailwind/Headless | Vuetify | Quasar | Element Plus |
+|---|---|---|---|---|
+| Button | `<button class="btn">` | `<v-btn>` | `<q-btn>` | `<el-button>` |
+| Input | `<input class="input">` | `<v-text-field>` | `<q-input>` | `<el-input>` |
+| Alert | `<div role="alert">` | `<v-alert>` | `<q-banner>` | `<el-alert>` |
+| Loading | utility spinner | `<v-progress-circular>` | `<q-spinner>` | `v-loading` or `<el-skeleton>` |
+| Table | semantic table | `<v-table>`/`<v-data-table>` | `<q-table>` | `<el-table>` |
+
 ## Integration Patterns
 
 ### Generic Composable (Kit-Agnostic)

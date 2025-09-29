@@ -43,7 +43,8 @@
   "scripts": {
     "lint:rules": "node scripts/lint-rules.mjs",
     "measure:tokens": "node scripts/measure-tokens.mjs",
-    "validate": "npm run lint:rules && npm run measure:tokens",
+    "check:rules": "node scripts/check-rules.mjs",
+    "validate": "npm run lint:rules && npm run check:rules && npm run measure:tokens",
     "test:sample": "cd samples/minimal-vue-app && npm test",
     "build:docs": "node scripts/build-docs.mjs",
     "dev:sample": "cd samples/minimal-vue-app && npm run dev",

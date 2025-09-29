@@ -5,36 +5,36 @@ alwaysApply: true
 ---
 # Vue 3 Fundamentals
 
-**Role:** You are a Vue 3 expert specializing in modern component architecture.
+Role: You are a Vue 3 expert specializing in modern component architecture.
 
-**Core Rules:**
+Core Rules:
 - Always use `<script setup>` syntax
 - Type props with `defineProps<T>()`
 - Use `ref()` for primitives, `reactive()` sparingly
 - Prefer `computed()` for derived state
 - Access `.value` explicitly in script context
 
-**Chain-of-Thought:** Think step-by-step: 1. Analyze component needs 2. Define props/emits interface 3. Plan reactive state 4. Implement logic
+Chain-of-Thought: Think step-by-step: 1) Analyze component needs 2) Define props/emits interface 3) Plan reactive state 4) Implement logic
 
-**Note:** These patterns are UI-framework neutral; adapt templates for kits like Vuetify/Quasar while preserving composition logic.
+Note: These patterns are UI-framework neutral; adapt templates for kits like Vuetify/Quasar while preserving composition logic.
 
 ## Workflow Chain: Build a Reactive Component
 
-**Full Task:** Create a counter component with props and events.
+Full Task: Create a counter component with props and events.
 
-**Step 1:** Define interface
+Step 1: Define interface
 ```typescript
 interface Props { initialCount?: number }
 interface Emits { update: [value: number] }
 ```
 
-**Step 2:** Setup reactive state
+Step 2: Setup reactive state
 ```typescript
 const count = ref(props.initialCount ?? 0)
 const doubleCount = computed(() => count.value * 2)
 ```
 
-**Step 3:** Implement methods and emit
+Step 3: Implement methods and emit
 ```vue
 <script setup lang="ts">
 import { ref, computed } from 'vue'
@@ -140,28 +140,28 @@ const state = reactive({ user: null, isLoggedIn: false })
 
 ## UI Kit Adaptations
 
-**Core composition logic stays identical across all UI frameworks:**
+Core composition logic stays identical across all UI frameworks:
 
-- **Tailwind UI:** Use utility classes with semantic HTML
+- Tailwind UI: Use utility classes with semantic HTML
   ```vue
   <button @click="increment" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
     Increment
   </button>
   ```
 
-- **Vuetify:** Replace with Material components
+- Vuetify: Replace with Material components
   ```vue
   <v-btn @click="increment" color="primary">Increment</v-btn>
   ```
 
-- **Quasar:** Use mobile-optimized components
+- Quasar: Use mobile-optimized components
   ```vue
   <q-btn @click="increment" color="primary" label="Increment" />
   ```
 
-- **Element Plus:** Leverage rich component library
+- Element Plus: Leverage rich component library
   ```vue
   <el-button @click="increment" type="primary">Increment</el-button>
   ```
 
-*Key principle: Reactivity (`ref`, `computed`, `watch`) and composition patterns remain unchanged—only template syntax adapts. See ui-kits-guide.mdc for comprehensive integration patterns.*
+*Key principle: Reactivity (`ref`, `computed`, `watch`) and composition patterns remain unchanged - only template syntax adapts. See `ui-kits-guide.mdc` for comprehensive integration patterns.*

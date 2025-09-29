@@ -1,6 +1,6 @@
 ---
 description: Vue 3 Cursor Rules - Practical development patterns
-globs: 
+globs:
 alwaysApply: true
 ---
 
@@ -28,21 +28,21 @@ Practical, concise rules for Vue 3 development using Composition API.
 
 ## Features
 
-- **Context-aware**: Rules activate based on file patterns and content
-- **Non-restrictive**: Provides guidance without limiting creativity
-- **Practical**: Real working code examples
-- **Modern**: Focuses on Vue 3.4+ and Composition API
-- **Modular**: Inspired by prompt engineering for AI-controllable outputs
-- **UI-Framework Flexible**: Works with vanilla Vue or any UI kit (Vuetify, Quasar, Tailwind, etc.)
+- Context-aware: Rules activate based on file patterns and content
+- Non-restrictive: Provides guidance without limiting creativity
+- Practical: Real working code examples
+- Modern: Focuses on Vue 3.4+ and Composition API
+- Modular: Inspired by prompt engineering for AI-controllable outputs
+- UI-Framework Flexible: Works with vanilla Vue or any UI kit (Vuetify, Quasar, Tailwind, etc.)
 
 ## UI Kit Compatibility
 
-Rules work with any UI framework (vanilla, Tailwind, or component libraries like Vuetify/Quasar). No lock-in—core Vue patterns remain framework-neutral while templates adapt. See `ui-kits-guide.mdc` for integration examples.
+Rules work with any UI framework (vanilla, Tailwind, or component libraries like Vuetify/Quasar). No lock-in - core Vue patterns remain framework-neutral while templates adapt. See `ui-kits-guide.mdc` for integration examples.
 
-**Quick-start examples:**
-- **Vuetify:** `npm install vuetify` → adapt rules as shown in guide
-- **Quasar:** `quasar create` → use with existing composable patterns
-- **Tailwind:** Works alongside for custom styling or as primary framework
+Quick-start:
+- Vuetify: `npm install vuetify`
+- Quasar: `npm create quasar@latest`
+- Tailwind: `npm install -D tailwindcss postcss autoprefixer`
 
 ## Cursor Model Tips
 
@@ -50,12 +50,12 @@ For lighter models, shorten examples in rules. Test workflow chains for consiste
 
 ## Quantitative Metrics
 
-- **13 files**, ~37KB total
-- **Modular structure** with role-based headers
-- **UI kit flexible** - works with 90%+ of Vue component libraries
-- **Workflow chains** in key files for step-by-step guidance
-- **Context-aware activation** reduces noise by 60%
-- **Compatible** with Vue 3.4+ and top UI frameworks (Vuetify, Quasar, Element Plus, Tailwind UI)
+- 13 files, ~37KB total
+- Modular structure with role-based headers
+- UI kit flexible - works with 90%+ of Vue component libraries
+- Workflow chains in key files for step-by-step guidance
+- Context-aware activation reduces noise by 60%
+- Compatible with Vue 3.4+ and top UI frameworks (Vuetify, Quasar, Element Plus, Tailwind UI)
 
 ## Usage
 
@@ -65,8 +65,8 @@ Rules automatically activate when working with relevant files:
 - `/stores` → Pinia patterns
 - `.test.ts` → Testing patterns
 - `tailwind.config.*` → Tailwind patterns
-- UI kit files → Framework-specific adaptations (see ui-kits-guide.mdc)
+- UI kit files → Framework-specific adaptations (see `ui-kits-guide.mdc`)
 
 ---
 
-*Efficient development assistance for Vue 3 projects*
+Efficient development assistance for Vue 3 projects

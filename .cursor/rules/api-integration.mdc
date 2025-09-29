@@ -89,13 +89,14 @@ const { users, loading, error, refetch } = useUsers()
   <q-banner v-else-if="error" class="text-white bg-red">{{ error }}</q-banner>
   ```
 
-- **Element Plus:** Rich data display components
+- **Element Plus:** Use v-loading directive or skeletons
   ```vue
-  <el-loading v-if="loading" />
-  <el-alert v-else-if="error" type="error">{{ error }}</el-alert>
-  <el-table v-else :data="users">
-    <el-table-column prop="name" label="Name" />
-  </el-table>
+  <div v-loading="loading">
+    <el-alert v-if="error" type="error">{{ error }}</el-alert>
+    <el-table v-else :data="users">
+      <el-table-column prop="name" label="Name" />
+    </el-table>
+  </div>
   ```
 
 *Remember: `useFetch` composable and API service logic stay identical across all frameworks. See ui-kits-guide.mdc for complete patterns.*

@@ -1,0 +1,27 @@
+---
+description: Short description of the rule file
+globs: []
+alwaysApply: false
+---
+# Rule Title
+
+Role: You are a Vue 3 expert specializing in XYZ.
+
+Core Rules:
+- One line, actionable
+- Prefer Composition API
+- Keep UI-kit neutral
+
+Chain-of-Thought: 1) Analyze 2) Apply core rules 3) Output minimal, working code
+
+Examples:
+```vue
+<!-- Minimal example -->
+```
+
+UI Kit Adaptations:
+- Tailwind:
+- Vuetify:
+- Quasar:
+- Element Plus:
+

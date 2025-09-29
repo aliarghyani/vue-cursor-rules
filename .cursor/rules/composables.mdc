@@ -99,31 +99,34 @@ export function useCounter(initialValue = 0) {
 ## API Composable
 
 ```typescript
-// composables/useApi.ts
+// composables/useFetch.ts
 import { ref } from 'vue'
 
-export function useApi<T>(url: string) {
+export function useFetch<T>(url: string, init?: RequestInit) {
   const data = ref<T | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
-  
+  let ctrl: AbortController | null = null
+
   const execute = async () => {
+    loading.value = true
+    error.value = null
+    ctrl?.abort()
+    ctrl = new AbortController()
     try {
-      loading.value = true
-      error.value = null
-      
-      const response = await fetch(url)
-      if (!response.ok) throw new Error(response.statusText)
-      
-      data.value = await response.json()
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Unknown error'
+      const res = await fetch(url, { signal: ctrl.signal, ...init })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      data.value = await res.json()
+    } catch (e: any) {
+      if (e?.name !== 'AbortError') {
+        error.value = e?.message ?? 'Request failed'
+      }
     } finally {
       loading.value = false
     }
   }
-  
-  return { data, loading, error, execute }
+
+  return { data, loading, error, execute, cancel: () => ctrl?.abort() }
 }
 ```
 

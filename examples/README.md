@@ -1,6 +1,6 @@
 # Vue 3 Examples
 
-## 🎯 Essential Examples
+## Essential Examples
 
 ### 1. Basic Component (`basic-component.vue`)
 - Standard component structure
@@ -27,5 +27,6 @@ Copy these patterns into your Vue 3 project. All examples use:
 
 ## UI Framework Variants
 
-For Vuetify and Quasar examples, see the cursor rules:
-- `.cursor/rules/ui-frameworks.mdc`
+For Vuetify and Quasar examples, see:
+- `.cursor/rules/ui-kits-guide.mdc`
+

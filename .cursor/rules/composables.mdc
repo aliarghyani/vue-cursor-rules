@@ -1,0 +1,161 @@
+---
+description: Composables patterns and reusable logic
+globs: ["**/composables/**", "**/hooks/**", "**/*.composable.ts", "**/use*.ts"]
+alwaysApply: false
+---
+# Composables
+
+**Role:** You are a Vue 3 expert specializing in reusable composition functions and reactive logic.
+
+**Core Rules:**
+- Use `use` prefix for composable functions
+- Return readonly reactive state when appropriate
+- Expose methods for state manipulation
+- Handle cleanup in `onUnmounted` if needed
+- Keep composables focused and single-purpose
+- Prefer well-tested utilities from `@vueuse/core` for common patterns (debounce, throttle, event helpers, etc.) before writing custom logic
+
+**Chain-of-Thought:** Think step-by-step: 1. Plan reactivity needs 2. Define internal state 3. Create methods/computed 4. Design return interface
+
+## Workflow Chain: Build a Form Composable
+
+**Full Task:** Create a reusable form composable with validation.
+
+**Step 1:** Define form state and validation
+```typescript
+// composables/useForm.ts
+interface FormState<T> {
+  values: T
+  errors: Partial<Record<keyof T, string>>
+  isValid: boolean
+}
+```
+
+**Step 2:** Implement reactive logic
+```typescript
+export function useForm<T extends Record<string, any>>(
+  initialValues: T,
+  validate: (values: T) => Partial<Record<keyof T, string>>
+) {
+  const values = ref(initialValues)
+  const errors = ref<Partial<Record<keyof T, string>>>({})
+  
+  const isValid = computed(() => Object.keys(errors.value).length === 0)
+  
+  const validateForm = () => {
+    errors.value = validate(values.value)
+    return isValid.value
+  }
+  
+  return {
+    values,
+    errors: readonly(errors),
+    isValid,
+    validateForm,
+    reset: () => { values.value = { ...initialValues } }
+  }
+}
+```
+
+**Step 3:** Use in component (see form-handling.mdc for integration):
+```vue
+<script setup lang="ts">
+const { values, errors, isValid, validateForm } = useForm(
+  { email: '', password: '' },
+  (vals) => ({
+    email: !vals.email ? 'Required' : undefined,
+    password: vals.password.length < 6 ? 'Too short' : undefined
+  })
+)
+</script>
+```
+
+## Basic Composable Pattern
+
+```typescript
+// composables/useCounter.ts
+import { ref, computed } from 'vue'
+
+export function useCounter(initialValue = 0) {
+  const count = ref(initialValue)
+  
+  const increment = () => count.value++
+  const decrement = () => count.value--
+  const reset = () => count.value = initialValue
+  
+  const isZero = computed(() => count.value === 0)
+  const isPositive = computed(() => count.value > 0)
+  
+  return {
+    count: readonly(count),
+    increment,
+    decrement,
+    reset,
+    isZero,
+    isPositive
+  }
+}
+```
+
+## API Composable
+
+```typescript
+// composables/useApi.ts
+import { ref } from 'vue'
+
+export function useApi<T>(url: string) {
+  const data = ref<T | null>(null)
+  const loading = ref(false)
+  const error = ref<string | null>(null)
+  
+  const execute = async () => {
+    try {
+      loading.value = true
+      error.value = null
+      
+      const response = await fetch(url)
+      if (!response.ok) throw new Error(response.statusText)
+      
+      data.value = await response.json()
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Unknown error'
+    } finally {
+      loading.value = false
+    }
+  }
+  
+  return { data, loading, error, execute }
+}
+```
+
+## Utility Integrations
+
+Lean on curated helpers from `@vueuse/core` whenever a task needs cross-cutting utilities so behaviour stays consistent.
+
+- Debounce or throttle user input -> `useDebounceFn`, `useThrottleFn`
+- Repeating timers or animation frames -> `useIntervalFn`, `useRafFn`
+- DOM listeners or observers -> `useEventListener`, `useIntersectionObserver`
+
+```typescript
+import { useDebounceFn } from '@vueuse/core'
+
+const runSearch = useDebounceFn(() => submitSearch(query.value), 200)
+```
+
+## Storage Composable
+
+```typescript
+// composables/useLocalStorage.ts
+import { ref, watch, Ref } from 'vue'
+
+export function useLocalStorage<T>(key: string, defaultValue: T): Ref<T> {
+  const stored = localStorage.getItem(key)
+  const value = ref(stored ? JSON.parse(stored) : defaultValue)
+  
+  watch(value, (newValue) => {
+    localStorage.setItem(key, JSON.stringify(newValue))
+  }, { deep: true })
+  
+  return value
+}
+```

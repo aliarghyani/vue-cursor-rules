@@ -1,0 +1,148 @@
+---
+description: Component testing with Vitest and Vue Test Utils
+globs: ["**/*.test.ts", "**/*.spec.ts", "**/tests/**"]
+alwaysApply: false
+---
+# Component Testing
+
+**Role:** You are a Vue 3 expert specializing in component testing and quality assurance.
+
+**Core Rules:**
+- Use Vitest with Vue Test Utils for component tests
+- Test behavior, not implementation details
+- Mock external dependencies properly
+- Test props, events, and user interactions
+- Keep tests focused and readable
+
+**Chain-of-Thought:** Think step-by-step: 1. Identify what to test 2. Setup component with props 3. Simulate user actions 4. Assert expected outcomes
+
+**Note:** Testing patterns are UI-framework neutral; adapt selectors and mocks for specific UI kits while preserving test logic.
+
+## Test Setup
+
+```typescript
+// tests/setup.ts
+import { beforeEach } from 'vitest'
+import { config } from '@vue/test-utils'
+
+config.global.plugins = [/* your plugins */]
+
+beforeEach(() => {
+  // Reset mocks
+  vi.clearAllMocks()
+})
+```
+
+## Basic Component Test
+
+```typescript
+// components/Counter.test.ts
+import { mount } from '@vue/test-utils'
+import { describe, it, expect } from 'vitest'
+import Counter from '@/components/Counter.vue'
+
+describe('Counter', () => {
+  it('renders initial count', () => {
+    const wrapper = mount(Counter, {
+      props: { initialCount: 5 }
+    })
+    
+    expect(wrapper.text()).toContain('5')
+  })
+  
+  it('increments count on button click', async () => {
+    const wrapper = mount(Counter)
+    
+    await wrapper.find('button').trigger('click')
+    
+    expect(wrapper.text()).toContain('1')
+  })
+  
+  it('emits update event', async () => {
+    const wrapper = mount(Counter)
+    
+    await wrapper.find('button').trigger('click')
+    
+    expect(wrapper.emitted()).toHaveProperty('update')
+    expect(wrapper.emitted('update')?.[0]).toEqual([1])
+  })
+})
+```
+
+## Testing Composables
+
+```typescript
+// composables/useCounter.test.ts
+import { describe, it, expect } from 'vitest'
+import { useCounter } from '@/composables/useCounter'
+
+describe('useCounter', () => {
+  it('initializes with default value', () => {
+    const { count } = useCounter()
+    expect(count.value).toBe(0)
+  })
+  
+  it('increments count', () => {
+    const { count, increment } = useCounter()
+    
+    increment()
+    
+    expect(count.value).toBe(1)
+  })
+})
+```
+
+## Mock External Dependencies
+
+```typescript
+// Mock API calls
+vi.mock('@/api/users', () => ({
+  getUsers: vi.fn(() => Promise.resolve([]))
+}))
+
+// Mock router
+const mockRouter = {
+  push: vi.fn()
+}
+
+vi.mock('vue-router', () => ({
+  useRouter: () => mockRouter
+}))
+```
+
+## UI Kit Testing Adaptations
+
+**Core testing logic remains identical—adapt selectors and setup for specific UI libraries:**
+
+- **Tailwind UI/Native Elements:** Standard CSS selectors
+  ```typescript
+  await wrapper.find('button').trigger('click')
+  expect(wrapper.find('.text-red-600')).toBeTruthy() // Error state
+  ```
+
+- **Vuetify:** Component-specific selectors and global setup
+  ```typescript
+  // vitest.config.ts
+  config.global.plugins = [vuetify]
+  
+  // Test
+  await wrapper.findComponent({ name: 'VBtn' }).trigger('click')
+  expect(wrapper.findComponent({ name: 'VAlert' }).exists()).toBe(true)
+  ```
+
+- **Quasar:** Configure Quasar testing utilities
+  ```typescript
+  import { installQuasarPlugin } from '@quasar/quasar-app-extension-testing-unit-vitest'
+  installQuasarPlugin()
+  
+  await wrapper.findComponent({ name: 'QBtn' }).trigger('click')
+  ```
+
+- **Element Plus:** Setup Element Plus globally
+  ```typescript
+  config.global.plugins = [ElementPlus]
+  
+  await wrapper.findComponent({ name: 'ElButton' }).trigger('click')
+  ```
+
+*Essential: Test component behavior and user interactions, not UI kit implementation details. Composable and business logic tests remain framework-agnostic.*

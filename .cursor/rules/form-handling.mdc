@@ -1,0 +1,130 @@
+---
+description: Form handling with validation and error management
+globs: ["**/*form*.vue", "**/*Form*.vue"]
+alwaysApply: false
+---
+# Form Handling
+
+**Role:** You are a Vue 3 expert specializing in form validation and user input management.
+
+**Core Rules:**
+- Use reactive refs for form state
+- Implement client-side validation patterns
+- Handle loading and error states properly
+- Provide clear user feedback
+- Separate validation logic into composables
+
+**Chain-of-Thought:** Think step-by-step: 1. Define form schema 2. Setup reactive state 3. Add validation rules 4. Handle submission
+
+**Note:** These patterns are UI-framework neutral; adapt templates for kits like Vuetify/Quasar while preserving composable logic.
+
+## Basic Form Pattern
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+
+interface LoginForm {
+  email: string
+  password: string
+}
+
+const form = ref<LoginForm>({
+  email: '',
+  password: ''
+})
+
+const errors = ref<Partial<LoginForm>>({})
+const loading = ref(false)
+
+const validateForm = (): boolean => {
+  errors.value = {}
+  
+  if (!form.value.email) {
+    errors.value.email = 'Email is required'
+  } else if (!/\S+@\S+\.\S+/.test(form.value.email)) {
+    errors.value.email = 'Email is invalid'
+  }
+  
+  if (!form.value.password) {
+    errors.value.password = 'Password is required'
+  } else if (form.value.password.length < 6) {
+    errors.value.password = 'Password must be at least 6 characters'
+  }
+  
+  return Object.keys(errors.value).length === 0
+}
+
+const handleSubmit = async () => {
+  if (!validateForm()) return
+  
+  loading.value = true
+  try {
+    await api.login(form.value)
+    // Handle success
+  } catch (error) {
+    // Handle error
+  } finally {
+    loading.value = false
+  }
+}
+</script>
+
+<template>
+  <form @submit.prevent="handleSubmit">
+    <div>
+      <input
+        v-model="form.email"
+        type="email"
+        placeholder="Email"
+        :class="{ 'error': errors.email }"
+      />
+      <span v-if="errors.email" class="error-message">
+        {{ errors.email }}
+      </span>
+    </div>
+    
+    <div>
+      <input
+        v-model="form.password"
+        type="password"
+        placeholder="Password"
+        :class="{ 'error': errors.password }"
+      />
+      <span v-if="errors.password" class="error-message">
+        {{ errors.password }}
+      </span>
+    </div>
+    
+    <button type="submit" :disabled="loading">
+      {{ loading ? 'Submitting...' : 'Submit' }}
+    </button>
+  </form>
+</template>
+```
+
+## UI Kit Adaptations
+
+**If using a UI kit, adapt the template while keeping composable logic:**
+
+- **Tailwind UI/Headless UI:** Use utility classes with native inputs
+  ```vue
+  <input v-model="form.email" class="block w-full rounded-md border-gray-300 focus:ring-blue-500" />
+  ```
+
+- **Vuetify:** Replace with Material components
+  ```vue
+  <v-text-field v-model="form.email" label="Email" :error-messages="errors.email" />
+  ```
+
+- **Quasar:** Use mobile-friendly components
+  ```vue
+  <q-input v-model="form.email" label="Email" :error="!!errors.email" :error-message="errors.email" />
+  ```
+
+- **Element Plus:** Leverage rich form components
+  ```vue
+  <el-input v-model="form.email" placeholder="Email" :class="{ 'is-error': errors.email }" />
+  ```
+
+*Tip: Validation logic and state management remain identical—only template syntax changes. See ui-kits-guide.mdc for detailed patterns.*

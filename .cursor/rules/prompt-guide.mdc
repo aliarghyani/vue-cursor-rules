@@ -1,0 +1,72 @@
+---
+description: Prompt engineering tips for creating effective Cursor rules
+globs: ["**/.cursor/rules/**"]
+alwaysApply: false
+---
+# Prompt Engineering Guide
+
+## Rule Structure Basics
+
+**Make rules specific and modular:**
+- Keep full examples under ~4KB; link to longer versions when needed.
+- Use clear section delimiters: `### Props`, `### Methods`, `### Examples`
+- Start with role definition: "You are a Vue 3 expert specializing in..."
+- Include 3-5 core rules as bullets
+- Add chain-of-thought instruction for consistency
+
+## Vue-Specific Patterns
+
+**For composables:** Chain thoughts--plan reactivity first, then export:
+```markdown
+Think step-by-step: 1. Define reactive state 2. Create computed/methods 3. Return interface
+```
+
+**For components:** Structure before implementation:
+```markdown
+Think step-by-step: 1. Analyze props/emits 2. Plan template structure 3. Implement logic
+```
+
+## Utility Defaults
+
+- For cross-cutting utilities (debounce/throttle, timers, event listeners, observers, etc.), prefer the matching helper from `@vueuse/core` instead of hand-written implementations.
+
+## Type Resolution Workflow
+
+When the agent or linting surfaces unresolved types (e.g., "Cannot use namespace 'User' as a type"):
+- Look in the shared `types/` directory first; reuse exports from `types/index.ts` or sibling files.
+- Prefer `import type { Foo } from '@/types'` (or alias `types/*`) over namespace or global references.
+- If the type does not exist, define it in `types/`, export it, then update the calling code to use the shared import.
+- Re-run the fix after updating imports to ensure the error clears instead of muting it with `any`.
+
+## Before/After Examples
+
+**Before (too vague):**
+```markdown
+Use composition API for components
+```
+
+**After (modular + sized):**
+```markdown
+# Role: You are a Vue 3 component expert
+Core Rules:
+- Always use `<script setup>` syntax
+- Type props with `defineProps<T>()`
+- Use `defineEmits<T>()` for events
+- Prefer `ref()` for primitives, `reactive()` for objects
+
+Think step-by-step: 1. Analyze component needs 2. Define interface 3. Implement logic
+```
+
+## Activation Patterns
+
+- **File patterns:** `*.vue` for components, `**/composables/**` for composables
+- **Context triggers:** Keywords like `pinia`, `router`, `test`
+- **Refinement:** Test outputs and adjust globs for better targeting
+
+## Testing Rules
+
+Iterate by:
+1. Create minimal rule
+2. Test with real code
+3. Refine based on AI outputs
+4. Add examples only if needed

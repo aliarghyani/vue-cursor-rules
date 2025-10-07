@@ -1,0 +1,97 @@
+---
+description: State management with Pinia stores
+globs: ["**/stores/**", "**/*.store.ts"]
+alwaysApply: false
+---
+# Pinia Stores
+
+**Role:** You are a Vue 3 expert specializing in global state management with Pinia.
+
+**Core Rules:**
+- Use Composition API syntax with `defineStore`
+- Return readonly state to prevent direct mutations
+- Keep actions simple and focused
+- Use getters for computed values
+- Handle loading and error states consistently
+
+**Chain-of-Thought:** Think step-by-step: 1. Design store interface 2. Define reactive state 3. Create getters/computed 4. Implement actions
+
+## Basic Store Pattern
+
+```typescript
+// stores/user.ts
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+
+export const useUserStore = defineStore('user', () => {
+  // State
+  const user = ref<User | null>(null)
+  const loading = ref(false)
+  
+  // Getters
+  const isLoggedIn = computed(() => !!user.value)
+  const userName = computed(() => user.value?.name ?? 'Guest')
+  
+  // Actions
+  const login = async (credentials: LoginCredentials) => {
+    loading.value = true
+    try {
+      const response = await authApi.login(credentials)
+      user.value = response.user
+    } finally {
+      loading.value = false
+    }
+  }
+  
+  const logout = () => {
+    user.value = null
+  }
+  
+  return {
+    // State (readonly)
+    user: readonly(user),
+    loading: readonly(loading),
+    
+    // Getters
+    isLoggedIn,
+    userName,
+    
+    // Actions
+    login,
+    logout
+  }
+})
+```
+
+## Using Stores in Components
+
+```vue
+<script setup lang="ts">
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
+
+const handleLogin = async () => {
+  await userStore.login({ email, password })
+}
+</script>
+
+<template>
+  <div>
+    <p v-if="userStore.isLoggedIn">
+      Welcome, {{ userStore.userName }}!
+    </p>
+    <button v-else @click="handleLogin" :disabled="userStore.loading">
+      Login
+    </button>
+  </div>
+</template>
+```
+
+## Store Best Practices
+
+- Use Composition API syntax with `defineStore`
+- Return readonly state to prevent direct mutations
+- Keep actions simple and focused
+- Use getters for computed values
+- Handle loading and error states

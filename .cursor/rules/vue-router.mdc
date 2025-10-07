@@ -1,0 +1,97 @@
+---
+description: Vue Router navigation and route handling
+globs: ["**/router/**", "**/views/**", "**/pages/**"]
+alwaysApply: false
+---
+# Vue Router
+
+**Role:** You are a Vue 3 expert specializing in client-side routing and navigation.
+
+**Core Rules:**
+- Use `useRouter()` and `useRoute()` composables
+- Prefer programmatic navigation with `router.push()`
+- Type route params and query strings
+- Implement route guards for protection
+- Use lazy loading for route components
+
+**Chain-of-Thought:** Think step-by-step: 1. Plan route structure 2. Define route types 3. Implement navigation 4. Add guards if needed
+
+## Route Configuration
+
+```typescript
+// router/index.ts
+import { createRouter, createWebHistory } from 'vue-router'
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [
+    {
+      path: '/',
+      name: 'Home',
+      component: () => import('@/views/HomeView.vue')
+    },
+    {
+      path: '/users/:id',
+      name: 'UserProfile',
+      component: () => import('@/views/UserProfile.vue'),
+      props: true
+    }
+  ]
+})
+
+export default router
+```
+
+## Navigation in Components
+
+```vue
+<script setup lang="ts">
+import { useRouter, useRoute } from 'vue-router'
+
+const router = useRouter()
+const route = useRoute()
+
+// Programmatic navigation
+const goToUser = (userId: string) => {
+  router.push({ name: 'UserProfile', params: { id: userId } })
+}
+
+// Access route params
+const userId = computed(() => route.params.id as string)
+</script>
+
+<template>
+  <div>
+    <!-- Declarative navigation -->
+    <RouterLink :to="{ name: 'UserProfile', params: { id: '123' } }">
+      View User
+    </RouterLink>
+    
+    <!-- Programmatic navigation -->
+    <button @click="goToUser('456')">Go to User 456</button>
+  </div>
+</template>
+```
+
+## Route Guards
+
+```typescript
+// Global guard
+router.beforeEach((to, from, next) => {
+  if (to.meta.requiresAuth && !isAuthenticated()) {
+    next({ name: 'Login' })
+  } else {
+    next()
+  }
+})
+
+// Component guard
+<script setup lang="ts">
+import { onBeforeRouteUpdate } from 'vue-router'
+
+onBeforeRouteUpdate((to, from) => {
+  // React to route changes
+  console.log('Route updated:', to.path)
+})
+</script>
+```

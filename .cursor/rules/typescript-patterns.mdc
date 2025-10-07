@@ -1,0 +1,174 @@
+---
+description: TypeScript patterns and type safety in Vue 3
+globs: ["**/*.ts", "**/*.vue"]
+alwaysApply: false
+---
+# TypeScript Patterns
+
+**Role:** You are a Vue 3 expert specializing in TypeScript integration and type safety.
+
+**Core Rules:**
+- Define interfaces for props, emits, and API responses
+- Check the shared `types/` directory before creating new definitions and prefer `import type` for shared models
+- Use generic types for reusable composables
+- Leverage type inference where possible
+- Create strict type definitions for stores
+- Use discriminated unions for complex state
+
+**Chain-of-Thought:** Think step-by-step: 1. Identify data shapes 2. Define TypeScript interfaces 3. Apply generics for reusability 4. Ensure type safety
+
+## Shared Type Imports
+
+1. Search the `types/` directory (root alias `types/*` and `@/types`) for existing definitions before declaring one inline.
+2. When a matching type exists, import it with `import type { MyType } from '@/types'` to avoid namespace or value imports.
+3. If a type is missing, add it to `types/index.ts` (or the appropriate shared file), export it, and reuse it across components, stores, and composables.
+4. Avoid `declare namespace` or global augmentations unless the project already uses them; prefer explicit modules.
+
+```typescript
+// Good: explicit shared type import
+import { ref } from 'vue'
+import type { User } from '@/types'
+
+const users = ref<User[]>([])
+```
+
+```typescript
+// Avoid: implicitly referencing unresolved namespaces
+const users = ref<UserNamespace.User[]>([]) // Lints as namespace usage
+```
+
+## Component Props Typing
+
+Import shared types from the project's types directory for consistency:
+
+```typescript
+import { User } from '../../types'
+```
+
+```vue
+<script setup lang="ts">
+import { User } from '../../types'
+
+
+interface Props {
+  user: User
+  showEmail?: boolean
+  size?: 'sm' | 'md' | 'lg'
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  showEmail: true,
+  size: 'md'
+})
+
+interface Emits {
+  click: [user: User]
+  delete: [userId: number]
+}
+
+const emit = defineEmits<Emits>()
+</script>
+```
+
+## Reactive Refs with Types
+
+```typescript
+import { ref, computed, type Ref } from 'vue'
+import type { User, ApiResponse } from '../../types'
+
+// Primitive types
+const count = ref<number>(0)
+const message = ref<string>('')
+const isVisible = ref<boolean>(false)
+
+// Object types using shared interfaces
+const user = ref<User | null>(null)
+const users = ref<User[]>([])
+
+// Computed with explicit typing
+const userDisplayName = computed<string>(() => {
+  return user.value?.name ?? 'Anonymous'
+})
+
+// Generic composable typing with shared ApiResponse
+function useApi<T>(): {
+  data: Ref<T | null>
+  loading: Ref<boolean>
+  error: Ref<string | null>
+  fetch: () => Promise<ApiResponse<T>>
+} {
+  const data = ref<T | null>(null)
+  const loading = ref(false)
+  const error = ref<string | null>(null)
+
+  const fetch = async (): Promise<ApiResponse<T>> => {
+    // Implementation with type safety
+    return { data: null, message: '', success: false, timestamp: new Date().toISOString() }
+  }
+
+  return { data, loading, error, fetch }
+}
+```
+
+## Store Typing
+
+```typescript
+// types/store.ts
+export interface UserState {
+  currentUser: User | null
+  users: User[]
+  loading: boolean
+}
+
+// stores/user.ts
+export const useUserStore = defineStore('user', () => {
+  const currentUser = ref<User | null>(null)
+  const users = ref<User[]>([])
+  const loading = ref<boolean>(false)
+
+  // Typed actions
+  const fetchUsers = async (): Promise<ApiResponse<User[]>> => {
+    loading.value = true
+    try {
+      // API call with typing
+      const response = await fetch('/api/users')
+      const result: ApiResponse<User[]> = await response.json()
+      users.value = result.data
+      return result
+    } catch (error) {
+      throw new Error('Failed to fetch users')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return {
+    currentUser,
+    users,
+    loading,
+    fetchUsers
+  }
+})
+```
+
+## API Response Typing
+
+```typescript
+// types/api.ts
+**Use shared API types from `types/index.ts`:**
+
+```typescript
+import type { ApiResponse, PaginatedResponse, User } from '../../types'
+
+// Usage with shared types
+const fetchUsers = async (): Promise<ApiResponse<User[]>> => {
+  const response = await fetch('/api/users')
+  return response.json()
+}
+
+const fetchPaginatedUsers = async (page: number, limit: number): Promise<PaginatedResponse<User>> => {
+  const response = await fetch(`/api/users?page=${page}&limit=${limit}`)
+  return response.json()
+}
+```
+```
